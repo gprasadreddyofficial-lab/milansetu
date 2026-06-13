@@ -1,0 +1,208 @@
+/* ══════════════════════════════════════════════════════════
+   CURATED PROFILES SECTION
+   ══════════════════════════════════════════════════════════ */
+.section {
+  background: #FAF5EE;
+  padding: 52px 48px 60px;
+  font-family: 'Poppins', system-ui, sans-serif;
+}
+
+/* ─── Section Header ─────────────────────────────────────── */
+.sectionHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.sectionTitle {
+  font-size: 28px;
+  font-weight: 700;
+  color: #2C1810;
+  margin: 0;
+  line-height: 1.2;
+}
+
+.sectionTitleAccent {
+  color: #8C1D40;
+}
+
+.viewAll {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: #C9A34A;
+  text-decoration: none;
+  transition: color 0.2s;
+  white-space: nowrap;
+  margin-top: 8px;
+}
+
+.viewAll:hover {
+  color: #a07c2e;
+}
+
+.sectionSubtitle {
+  font-size: 13px;
+  font-weight: 400;
+  color: #7a6355;
+  margin: 4px 0 32px;
+}
+
+/* ─── Cards Grid ─────────────────────────────────────────── */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px;
+}
+
+/* ─── Single Card ────────────────────────────────────────── */
+.card {
+  background: #ffffff;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
+  transition: transform 0.22s, box-shadow 0.22s;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.13);
+}
+
+/* ─── Image wrapper ──────────────────────────────────────── */
+.imageWrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  overflow: hidden;
+  background: #e8ddd0;
+}
+
+.profileImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+  display: block;
+}
+
+/* VERIFIED badge */
+.verifiedBadge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(20, 10, 5, 0.72);
+  color: #fff;
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  padding: 4px 8px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  backdrop-filter: blur(4px);
+}
+
+.verifiedDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4caf50;
+  flex-shrink: 0;
+}
+
+/* ─── Card Body ──────────────────────────────────────────── */
+.cardBody {
+  padding: 14px 16px 16px;
+}
+
+.cardTop {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.profileName {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2C1810;
+}
+
+.matchScore {
+  font-size: 11px;
+  font-weight: 700;
+  color: #8C1D40;
+  white-space: nowrap;
+}
+
+.profileDetails {
+  font-size: 11.5px;
+  font-weight: 400;
+  color: #7a6355;
+  line-height: 1.5;
+  margin-bottom: 14px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.viewProfileBtn {
+  display: block;
+  width: 100%;
+  padding: 9px 0;
+  border: 1.5px solid #8C1D40;
+  border-radius: 6px;
+  background: transparent;
+  color: #8C1D40;
+  font-size: 12.5px;
+  font-weight: 600;
+  font-family: 'Poppins', system-ui, sans-serif;
+  text-align: center;
+  cursor: pointer;
+  transition: background 0.2s, color 0.2s;
+}
+
+.viewProfileBtn:hover {
+  background: #8C1D40;
+  color: #fff;
+}
+
+/* ─── Responsive ─────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  .section {
+    padding: 44px 32px 52px;
+  }
+  .grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .section {
+    padding: 36px 20px 44px;
+  }
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 16px;
+  }
+  .sectionTitle {
+    font-size: 22px;
+  }
+}
+
+@media (max-width: 480px) {
+  .grid {
+    grid-template-columns: 1fr;
+  }
+  .sectionHeader {
+    flex-direction: column;
+    gap: 8px;
+  }
+}

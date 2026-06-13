@@ -1,0 +1,142 @@
+/* ─── Footer ─────────────────────────────────────────────── */
+.footer {
+  background: #1c0e0a;
+  color: #c9b8a8;
+  font-family: 'Segoe UI', system-ui, sans-serif;
+  margin-top: auto;
+}
+
+.inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 56px 24px 40px;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1.4fr;
+  gap: 48px;
+}
+
+/* ─── Brand ──────────────────────────────────────────────── */
+.logo {
+  display: block;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: -0.5px;
+  margin-bottom: 14px;
+}
+
+.logoMilan {
+  color: #f5ede4;
+}
+
+.logoSetu {
+  color: #c0394e;
+}
+
+.tagline {
+  font-size: 13.5px;
+  line-height: 1.65;
+  color: #9a8878;
+  margin-bottom: 20px;
+}
+
+.socials {
+  display: flex;
+  gap: 12px;
+}
+
+.socialIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid #3a2620;
+  color: #c9b8a8;
+  cursor: pointer;
+  background: transparent;
+  transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+
+.socialIcon:hover {
+  background: #8b1a2e;
+  border-color: #8b1a2e;
+  color: #fff;
+}
+
+/* ─── Columns ────────────────────────────────────────────── */
+.heading {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #f0e4d8;
+  margin: 0 0 18px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #3a2620;
+}
+
+.list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.list a {
+  text-decoration: none;
+  font-size: 13.5px;
+  color: #9a8878;
+  transition: color 0.2s;
+}
+
+.list a:hover {
+  color: #c0394e;
+}
+
+/* ─── Contact list ───────────────────────────────────────── */
+.contactList li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13.5px;
+  color: #9a8878;
+  line-height: 1.5;
+}
+
+.contactList svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: #c0394e;
+}
+
+/* ─── Bottom bar ─────────────────────────────────────────── */
+.bottom {
+  border-top: 1px solid #2e1a14;
+  text-align: center;
+  padding: 18px 24px;
+}
+
+.bottom p {
+  font-size: 12.5px;
+  color: #6a5548;
+  margin: 0;
+}
+
+/* ─── Responsive ─────────────────────────────────────────── */
+@media (max-width: 900px) {
+  .inner {
+    grid-template-columns: 1fr 1fr;
+    gap: 36px;
+  }
+}
+
+@media (max-width: 560px) {
+  .inner {
+    grid-template-columns: 1fr;
+    gap: 28px;
+    padding: 40px 20px 32px;
+  }
+}
