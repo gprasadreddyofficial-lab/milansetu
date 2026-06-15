@@ -1,6 +1,12 @@
 import { useState } from 'react';
 import Header from '../../components/Header';
 import Footer from '../../components/Footer';
+import HowItWorks from '../../components/HowItWorks';
+import WhyChooseUs from '../../components/WhyChooseUs';
+import SuccessStories from '../../components/SuccessStories';
+import MembershipPlans from '../../components/MembershipPlans';
+import BranchNetwork from '../../components/BranchNetwork';
+import MobileAppShowcase from '../../components/MobileAppShowcase';
 import styles from '../styles/home_page.module.css';
 import cp from '../styles/curated_profiles.module.css';
 
@@ -161,25 +167,25 @@ function HeroSection() {
             Search
           </button>
         </form>
-      </div>
 
-      {/* Stats — absolutely pinned to bottom-left */}
-      <ul className={styles.stats}>
-        <li className={styles.stat}>
-          <span className={styles.statNum}>5000+</span>
-          <span className={styles.statLabel}>VERIFIED<br />PROFILES</span>
-        </li>
-        <li className={styles.statSep} aria-hidden="true">|</li>
-        <li className={styles.stat}>
-          <span className={styles.statNum}>2k+</span>
-          <span className={styles.statLabel}>SUCCESS<br />STORIES</span>
-        </li>
-        <li className={styles.statSep} aria-hidden="true">|</li>
-        <li className={styles.stat}>
-          <span className={styles.statNum}>100%</span>
-          <span className={styles.statLabel}>PRIVACY<br />ASSURED</span>
-        </li>
-      </ul>
+        {/* Stats — positioned under the search box */}
+        <ul className={styles.stats}>
+          <li className={styles.stat}>
+            <span className={styles.statNum}>5000+</span>
+            <span className={styles.statLabel}>VERIFIED<br />PROFILES</span>
+          </li>
+          <li className={styles.statSep} aria-hidden="true">|</li>
+          <li className={styles.stat}>
+            <span className={styles.statNum}>2k+</span>
+            <span className={styles.statLabel}>SUCCESS<br />STORIES</span>
+          </li>
+          <li className={styles.statSep} aria-hidden="true">|</li>
+          <li className={styles.stat}>
+            <span className={styles.statNum}>100%</span>
+            <span className={styles.statLabel}>PRIVACY<br />ASSURED</span>
+          </li>
+        </ul>
+      </div>
 
       {/* Slide Dots */}
       <div className={styles.dots} role="tablist" aria-label="Slide indicators">
@@ -218,7 +224,10 @@ function CuratedProfiles() {
             <div className={cp.imageWrap}>
               <img src={p.img} alt={p.name} className={cp.profileImg} loading="lazy" />
               <span className={cp.verifiedBadge}>
-                <span className={cp.verifiedDot} aria-hidden="true" />{' '}Verified
+                <svg className={cp.verifiedTick} viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Verified
               </span>
             </div>
             <div className={cp.cardBody}>
@@ -247,6 +256,12 @@ export default function HomePage() {
       <main>
         <HeroSection />
         <CuratedProfiles />
+        <HowItWorks />
+        <WhyChooseUs />
+        <SuccessStories />
+        <MembershipPlans />
+        <BranchNetwork />
+        <MobileAppShowcase />
         {/* More sections will go here */}
       </main>
       <Footer />

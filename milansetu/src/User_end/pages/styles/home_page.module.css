@@ -36,15 +36,11 @@
   z-index: 0;
 }
 
-/* Layered overlay: light left fade + strong bottom strip */
+/* Layered overlay: consistent dark gradient for readability on all devices */
 .heroOverlay {
   position: absolute;
   inset: 0;
-  background:
-    /* bottom dark band — makes stats readable */
-    linear-gradient(to top, rgba(3, 1, 1, 0.92) 0%, rgba(3, 1, 1, 0.60) 14%, rgba(3, 1, 1, 0.15) 28%, transparent 40%),
-    /* left fade — headline/search readability */
-    linear-gradient(to right, rgb(8 2 1 / 65%) 3%, rgba(8, 2, 1, 0.20) 35%, transparent 58%);
+  background: linear-gradient(135deg, rgba(8, 2, 1, 0.85) 0%, rgba(8, 2, 1, 0.5) 50%, rgba(8, 2, 1, 0.2) 100%);
   z-index: 1;
 }
 
@@ -72,12 +68,13 @@ position: relative;
 .heroBadge {
     display: inline-flex;
     align-items: center;
-    padding: 8px 30px;
+    padding: 6px 4px;
     border: 1px solid #C9A34A;
     color: #C9A34A;
     font-size: 20px;
     font-weight: 600;
     letter-spacing: 2.8px;
+    text-indent: 2.8px;
     border-radius: 2px;
 }
 
@@ -211,16 +208,13 @@ position: relative;
   background: #6d1530;
 }
 
-/* ─── Stats — pinned bottom-left ────────────────────────── */
+/* ─── Stats — positioned under search box ───────────────── */
 .stats {
-  position: absolute;
-  bottom: 36px;
-  left: 44px;
-  z-index: 3;
+  position: relative;
   display: flex;
   align-items: center;
   list-style: none;
-  margin: 0;
+  margin: 20px 0 0 0;
   padding: 0;
   gap: 0;
 }

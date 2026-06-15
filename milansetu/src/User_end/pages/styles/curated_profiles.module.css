@@ -62,11 +62,15 @@
 
 /* ─── Single Card ────────────────────────────────────────── */
 .card {
+  width: 100%;
+  min-height: 520px;
   background: #ffffff;
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.07);
+  border: 1px solid #E5E7EB;
   transition: transform 0.22s, box-shadow 0.22s;
+  display: flex;
+  flex-direction: column;
 }
 
 .card:hover {
@@ -78,9 +82,10 @@
 .imageWrap {
   position: relative;
   width: 100%;
-  aspect-ratio: 3 / 4;
+  aspect-ratio: 4 / 3;
   overflow: hidden;
   background: #e8ddd0;
+  flex-shrink: 0;
 }
 
 .profileImg {
@@ -96,81 +101,91 @@
   position: absolute;
   top: 12px;
   right: 12px;
-  background: rgba(20, 10, 5, 0.72);
-  color: #fff;
-  font-size: 9px;
-  font-weight: 600;
-  letter-spacing: 0.8px;
+  background: linear-gradient(96.93deg, #C89B3C 0%, #E8C172 50%, #C89B3C 100%);
+  color: #0A1128;
+  font-family: 'Inter', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
   text-transform: uppercase;
-  padding: 4px 8px;
-  border-radius: 20px;
+  padding: 4px 12px;
+  border-radius: 9999px;
   display: flex;
   align-items: center;
   gap: 4px;
-  backdrop-filter: blur(4px);
+  line-height: 15px;
 }
 
-.verifiedDot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: #4caf50;
+.verifiedTick {
+  width: 12px;
+  height: 12px;
   flex-shrink: 0;
 }
 
 /* ─── Card Body ──────────────────────────────────────────── */
 .cardBody {
-  padding: 14px 16px 16px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
 }
 
 .cardTop {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
-  margin-bottom: 4px;
+  margin-bottom: 8px;
 }
 
 .profileName {
-  font-size: 14px;
-  font-weight: 600;
-  color: #2C1810;
+  font-family: 'Poppins', sans-serif;
+  font-size: 16px;
+  font-weight: 400;
+  color: #0A1128;
+  line-height: 24px;
 }
 
 .matchScore {
-  font-size: 11px;
+  font-family: 'Inter', sans-serif;
+  font-size: 12px;
   font-weight: 700;
-  color: #8C1D40;
+  color: #C89B3C;
+  line-height: 16px;
   white-space: nowrap;
 }
 
 .profileDetails {
-  font-size: 11.5px;
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
   font-weight: 400;
-  color: #7a6355;
-  line-height: 1.5;
-  margin-bottom: 14px;
+  color: #554245;
+  line-height: 24px;
+  margin-bottom: 12px;
   text-transform: uppercase;
-  letter-spacing: 0.3px;
+  letter-spacing: 0.8px;
 }
 
 .viewProfileBtn {
   display: block;
   width: 100%;
-  padding: 9px 0;
-  border: 1.5px solid #8C1D40;
-  border-radius: 6px;
+  height: 50px;
+  padding: 12px 0;
+  border: 1px solid #7A1E3A;
+  border-radius: 4px;
   background: transparent;
-  color: #8C1D40;
-  font-size: 12.5px;
-  font-weight: 600;
-  font-family: 'Poppins', system-ui, sans-serif;
+  color: #7A1E3A;
+  font-family: 'Inter', sans-serif;
+  font-size: 16px;
+  font-weight: 400;
   text-align: center;
   cursor: pointer;
   transition: background 0.2s, color 0.2s;
+  line-height: 24px;
+  margin-top: auto;
 }
 
 .viewProfileBtn:hover {
-  background: #8C1D40;
+  background: #7A1E3A;
   color: #fff;
 }
 

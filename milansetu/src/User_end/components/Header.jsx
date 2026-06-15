@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import styles from '../pages/styles/header.module.css';
 
 const navLinks = [
@@ -12,7 +12,22 @@ const navLinks = [
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
-  const [active, setActive] = useState('HOME');
+  
+  const currentHash = window.location.hash || '#home';
+  const initialActive = navLinks.find(link => link.href === currentHash)?.label || 'HOME';
+  const [active, setActive] = useState(initialActive);
+
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash || '#home';
+      const activeLink = navLinks.find(link => link.href === hash);
+      if (activeLink) {
+        setActive(activeLink.label);
+      }
+    };
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
 
   return (
     <header className={styles.header}>
