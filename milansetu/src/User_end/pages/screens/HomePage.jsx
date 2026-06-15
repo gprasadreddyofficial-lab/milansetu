@@ -6,7 +6,7 @@ import cp from '../styles/curated_profiles.module.css';
 
 const heroBg = '/images/hero_bg.png';
 const slides = [0, 1, 2, 3];
-
+ 
 /* ─── Curated Profiles data ──────────────────────────────── */
 const profiles = [
   {
