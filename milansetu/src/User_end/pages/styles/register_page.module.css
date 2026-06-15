@@ -1,0 +1,249 @@
+.registerContainer {
+  display: flex;
+  height: 100vh;
+  width: 100%;
+  overflow: hidden;
+  font-family: 'Inter', sans-serif;
+}
+
+/* LEFT PANEL - Form */
+.leftPanel {
+  width: 50%;
+  background-color: #FFFFFF;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 60px 80px;
+  overflow-y: auto;
+}
+
+.personalDetailsHeader {
+  margin-bottom: 32px;
+}
+
+.personalDetailsHeader h2 {
+  font-family: 'Playfair Display', serif;
+  color: #1A1A1A;
+  font-size: 28px;
+  margin-bottom: 8px;
+}
+
+.stepIndicator {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #6B6B6B;
+  font-size: 14px;
+}
+
+.stepCircle {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #4A0E1D;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.formGroup {
+  margin-bottom: 24px;
+}
+
+.label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1A1A1A;
+  margin-bottom: 8px;
+}
+
+.input {
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid #E0DCD6;
+  border-radius: 8px;
+  font-size: 15px;
+  outline: none;
+  transition: border-color 0.3s ease;
+  background: #FDFDFD;
+}
+
+.input:focus {
+  border-color: #4A0E1D;
+}
+
+.genderToggle {
+  display: flex;
+  gap: 12px;
+}
+
+.genderBtn {
+  flex: 1;
+  padding: 12px;
+  border: 1px solid #E0DCD6;
+  border-radius: 8px;
+  background: white;
+  color: #1A1A1A;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+}
+
+.genderBtnActive {
+  background: #4A0E1D;
+  color: white;
+  border-color: #4A0E1D;
+}
+
+.phoneInputWrapper {
+  display: flex;
+  gap: 12px;
+}
+
+.countryCode {
+  width: 80px;
+}
+
+.saveBtn {
+  width: 100%;
+  background: #4A0E1D;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 16px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 20px;
+  box-shadow: 0 4px 12px rgba(74, 14, 29, 0.2);
+  transition: background 0.3s ease;
+}
+
+.saveBtn:hover {
+  background: #3A0B17;
+}
+
+/* RIGHT PANEL - Showcase */
+.rightPanel {
+  width: 50%;
+  background: linear-gradient(135deg, #3A0815 0%, #5D1225 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  padding: 40px;
+}
+
+.showcaseHeading {
+  font-family: 'Playfair Display', serif;
+  color: #C5A059;
+  font-size: 36px;
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 40px;
+  line-height: 1.2;
+  max-width: 400px;
+}
+
+.phoneMockupContainer {
+  position: relative;
+  width: 260px;
+  height: 520px;
+  background: #1A1A1A;
+  border-radius: 36px;
+  border: 8px solid #2A2A2A;
+  box-shadow: 0 24px 48px rgba(0, 0, 0, 0.4);
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mockupContent {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #3A0815;
+}
+
+.mockupImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.8;
+}
+
+.floatingCard {
+  position: absolute;
+  background: white;
+  padding: 12px 16px;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 5;
+}
+
+.cardIcon {
+  width: 32px;
+  height: 32px;
+  background: #FDF4E3;
+  color: #C5A059;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+}
+
+.cardText {
+  display: flex;
+  flex-direction: column;
+}
+
+.cardTag {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: #4A0E1D;
+  text-transform: uppercase;
+}
+
+.cardLabel {
+  font-size: 13px;
+  font-weight: 600;
+  color: #1A1A1A;
+}
+
+.cardElite {
+  top: 15%;
+  right: 15%;
+}
+
+.cardVerified {
+  bottom: 15%;
+  left: 15%;
+}
+
+@media (max-width: 1024px) {
+  .registerContainer {
+    flex-direction: column;
+    height: auto;
+    overflow-y: auto;
+  }
+  .leftPanel, .rightPanel {
+    width: 100%;
+    padding: 60px 20px;
+  }
+  .rightPanel {
+    height: 600px;
+  }
+}

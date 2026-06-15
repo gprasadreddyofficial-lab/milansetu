@@ -5,6 +5,8 @@ import SuccessStoriesPage from './User_end/pages/screens/SuccessStoriesPage';
 import MembershipPage from './User_end/pages/screens/MembershipPage';
 import BranchesPage from './User_end/pages/screens/BranchesPage';
 import ContactPage from './User_end/pages/screens/ContactPage';
+import LoginPage from './User_end/pages/screens/LoginPage';
+import RegisterPage from './User_end/pages/screens/RegisterPage';
 
 export default function App() {
   const [route, setRoute] = useState(window.location.hash || '#home');
@@ -37,6 +39,14 @@ export default function App() {
 
   if (route === '#contact') {
     return <ContactPage />;
+  }
+
+  if (route === '#login') {
+    return <LoginPage />;
+  }
+
+  if (route === '#register') {
+    return <RegisterPage />;
   }
 
   return <HomePage />;
