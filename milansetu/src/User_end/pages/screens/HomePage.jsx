@@ -9,8 +9,7 @@ import BranchNetwork from '../../components/BranchNetwork';
 import MobileAppShowcase from '../../components/MobileAppShowcase';
 import styles from '../styles/home_page.module.css';
 import cp from '../styles/curated_profiles.module.css';
-
-const heroBg = '/images/hero_bg.png';
+import heroBg from '../../../assets/User_end_assets/hero_bg.png';
 const slides = [0, 1, 2, 3];
  
 /* ─── Curated Profiles data ──────────────────────────────── */
