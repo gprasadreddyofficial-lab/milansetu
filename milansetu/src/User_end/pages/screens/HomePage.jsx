@@ -10,6 +10,10 @@ import MobileAppShowcase from '../../components/MobileAppShowcase';
 import styles from '../styles/home_page.module.css';
 import cp from '../styles/curated_profiles.module.css';
 import heroBg from '../../../assets/User_end_assets/hero_bg.png';
+import priyaImg from '../../../assets/User_end_assets/pro.png';
+import arjunImg from '../../../assets/User_end_assets/pro1.png';
+import ananyaImg from '../../../assets/User_end_assets/pro2.png';
+import rohanImg from '../../../assets/User_end_assets/pro3.png';
 const slides = [0, 1, 2, 3];
  
 /* ─── Curated Profiles data ──────────────────────────────── */
@@ -21,7 +25,7 @@ const profiles = [
     profession: 'Fashion Designer',
     city: 'Mumbai',
     match: '98%',
-    img: 'https://images.unsplash.com/photo-1610173827210-c98e8d904de7?w=400&q=80',
+    img: priyaImg,
   },
   {
     id: 2,
@@ -30,7 +34,7 @@ const profiles = [
     profession: 'Tech Lead',
     city: 'Bangalore',
     match: '95%',
-    img: 'https://images.unsplash.com/photo-1618498082410-b4aa22193b9e?w=400&q=80',
+    img: arjunImg,
   },
   {
     id: 3,
@@ -39,7 +43,7 @@ const profiles = [
     profession: 'Architect',
     city: 'Delhi',
     match: '92%',
-    img: 'https://images.unsplash.com/photo-1583391733956-3750e0ff4e8b?w=400&q=80',
+    img: ananyaImg,
   },
   {
     id: 4,
@@ -48,7 +52,7 @@ const profiles = [
     profession: 'Surgeon',
     city: 'Chennai',
     match: '89%',
-    img: 'https://images.unsplash.com/photo-1566753323558-f4e0952af115?w=400&q=80',
+    img: rohanImg,
   },
 ];
 

@@ -68,7 +68,7 @@ position: relative;
 .heroBadge {
     display: inline-flex;
     align-items: center;
-    padding: 6px 4px;
+    padding: 6px 45px;
     border: 1px solid #C9A34A;
     color: #C9A34A;
     font-size: 20px;
