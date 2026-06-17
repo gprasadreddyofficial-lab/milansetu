@@ -55,7 +55,7 @@ export default function LoginPage() {
     if (validate()) {
       console.log('Signing in...', formData);
       console.log('Login successful');
-      window.location.hash = '#home';
+      window.location.hash = '#dashboard';
     }
   };
 
