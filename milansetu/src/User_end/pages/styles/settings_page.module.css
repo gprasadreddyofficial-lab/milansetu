@@ -2,7 +2,7 @@
   display: flex;
   min-height: 100vh;
   background-color: #F7F4F2; /* light ivory-gray */
-  font-family: 'Inter', -apple-system, sans-serif;
+  font-family: 'Poppins', sans-serif;
 }
 
 /* Main Content */
@@ -28,7 +28,7 @@
 }
 
 .logoText {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Poppins', sans-serif;
   font-size: 22px;
   font-weight: 700;
   color: #6E1E37;
@@ -86,7 +86,7 @@
 }
 
 .pageTitle {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Poppins', sans-serif;
   font-size: 34px;
   font-weight: 700;
   color: #6E1E37;
@@ -188,7 +188,7 @@
 .bgGold { background-color: #F5E6C2; color: #C9971F; }
 
 .cardTitle {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Poppins', sans-serif;
   font-size: 22px;
   font-weight: 700;
   color: #6E1E37;

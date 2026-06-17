@@ -1,7 +1,7 @@
 .page {
   background-color: #FAF8F5;
   color: #1A1A1A;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Poppins', sans-serif;
 }
 
 /* 1. Page Header */
@@ -12,7 +12,7 @@
 }
 
 .title {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Poppins', sans-serif;
   color: #8B1A3A;
   font-size: 40px;
   font-weight: 700;
@@ -85,7 +85,7 @@
 }
 
 .cardLabel {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Poppins', sans-serif;
   font-size: 22px;
   font-weight: 700;
   margin: 0 0 4px 0;
@@ -194,7 +194,7 @@
 }
 
 .comparisonTitle {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Poppins', sans-serif;
   font-size: 30px;
   font-weight: 700;
   color: #8B1A3A;
@@ -325,7 +325,7 @@
 }
 
 .faqTitle {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Poppins', sans-serif;
   font-size: 34px;
   font-weight: 700;
   color: #8B1A3A;
@@ -413,7 +413,7 @@
 }
 
 .footerBrand {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Poppins', sans-serif;
   color: #C9A84C;
   font-size: 24px;
   font-weight: 700;

@@ -7,8 +7,8 @@
 .hero {
   position: relative;
   width: 100%;
-  height: 540px;
-  background-color: #3a1a0a;
+  height: 480px;
+  background-color: #FAF7F2;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -21,26 +21,26 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 52% top;
+  object-position: center center;
   z-index: 0;
 }
 
-/* Vignette/Smoky Overlay */
+/* Light cream wash overlay — image shows through faintly */
 .heroOverlay {
   position: absolute;
   inset: 0;
-  background: radial-gradient(circle, rgba(20, 15, 15, 0.6) 0%, rgba(20, 15, 15, 0.85) 100%);
+  background: rgba(250, 247, 242, 0.82);
   z-index: 1;
 }
 
-/* Optional top/bottom fade into page bg */
+/* Top/bottom fade into page bg */
 .hero::before,
 .hero::after {
   content: '';
   position: absolute;
   left: 0;
   width: 100%;
-  height: 100px;
+  height: 80px;
   z-index: 2;
   pointer-events: none;
 }
@@ -68,7 +68,7 @@
 
 .eyebrow {
   font-family: 'Poppins', sans-serif;
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
   color: #C9A04E;
   letter-spacing: 4px;
@@ -85,22 +85,23 @@
 }
 
 .headingMaroon {
-  color: #9B2545;
+  color: #7A1F3D;
 }
 
-.headingCream {
-  color: #E8E2D8;
+.headingGold {
+  color: #C9A04E;
   font-weight: 600;
 }
 
 .description {
-  font-family: 'Inter', sans-serif;
-  font-size: 17px;
+  font-family: 'Poppins', sans-serif;
+  font-size: 16px;
   font-weight: 400;
-  color: #9A9088; /* rgba(255,255,255,0.5) equivalent */
-  line-height: 1.7;
-  max-width: 620px;
+  color: #6B5B52;
+  line-height: 1.75;
+  max-width: 580px;
   margin: 0;
+  text-align: center;
 }
 
 .placeholderSection {
@@ -196,7 +197,7 @@
 }
 
 .teamRole {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-size: 13px;
   font-weight: 600;
   text-transform: uppercase;
@@ -207,7 +208,7 @@
 }
 
 .teamBio {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-size: 15px;
   font-weight: 400;
   color: #5A5A5A;
@@ -302,7 +303,7 @@
 }
 
 .mvBody {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-size: 16px;
   font-weight: 400;
   color: #6B6B6B;
@@ -379,7 +380,7 @@
 }
 
 .journeyParagraph {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-size: 16px;
   font-weight: 400;
   color: #5A5A5A;
@@ -430,7 +431,7 @@
 }
 
 .quoteSublabel {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-size: 14px;
   font-weight: 400;
   color: #E0B8C5; /* light pink/muted */

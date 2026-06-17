@@ -1,4 +1,5 @@
 import styles from '../pages/styles/success_stories.module.css';
+import section4Img from '../../assets/User_end_assets/homepage_section4.png';
 
 export default function SuccessStories() {
   return (
@@ -18,15 +19,15 @@ export default function SuccessStories() {
           {/* Left: Image Side */}
           <div className={styles.imageSide}>
             <img 
-              src="https://images.unsplash.com/photo-1621112904887-419379ce6824?w=800&q=80" 
-              alt="Sneha & Sai" 
+              src={section4Img}
+              alt="Sneha & Rahul" 
               className={styles.featuredImage}
             />
           </div>
 
           {/* Right: Content Side */}
           <div className={styles.contentSide}>
-            <span className={styles.storyTag}>SNEHA & SAI'S STORY</span>
+            <span className={styles.storyTag}>SNEHA & RAHUL'S STORY</span>
             <blockquote className={styles.testimonial}>
               "Heritage Elite provided the privacy and exclusivity we were looking for. The matchmaking process was so personalized that we felt like we already knew each other before our first meeting. It wasn't just about finding a partner; it was about finding the right soul for the family."
             </blockquote>

@@ -1,20 +1,22 @@
 .page {
   background-color: #FAF8F5;
   color: #1A1A1A;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Poppins', sans-serif;
 }
 
 /* 1. Hero Section */
 .hero {
-  width: 100%;
-  height: 400px;
   position: relative;
+  width: 100%;
+  height: 100vh;
+  min-height: 600px;
+  max-height: 860px;
   display: flex;
   align-items: center;
   justify-content: center;
-  text-align: center;
-  background-color: #3D2B1F;
   overflow: hidden;
+  padding: 0 80px;
+  background: #3a1a0a;
 }
 
 .heroBg {
@@ -23,7 +25,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: 52% top;
+  object-position: center center;
   z-index: 0;
 }
 
@@ -39,11 +41,12 @@
   z-index: 2;
   max-width: 600px;
   color: #FFFFFF;
-  padding: 0 20px;
+  padding: 0;
+  text-align: center;
 }
 
 .heroHeading {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Poppins', sans-serif;
   font-size: 44px;
   font-weight: 700;
   line-height: 1.2;
@@ -55,6 +58,8 @@
   line-height: 1.6;
   opacity: 0.85;
   margin: 0 auto;
+  max-width: 480px;
+  text-align: center;
 }
 
 .heroLine {
@@ -103,13 +108,25 @@
 }
 
 .cardIcon {
-  color: #C9A84C;
-  font-size: 28px;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
+}
+
+.cardIconImg {
+  width: 44px;
+  height: 44px;
+  object-fit: contain;
+}
+
+.infoIconImg {
+  width: 18px;
+  height: 18px;
+  object-fit: contain;
+  flex-shrink: 0;
+  margin-top: 2px;
 }
 
 .cityName {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Poppins', sans-serif;
   font-size: 22px;
   font-weight: 700;
   color: #1A1A1A;
@@ -193,25 +210,23 @@
 
 .mapSide {
   flex: 1;
-  height: 320px;
-  background-color: #1E2A1A;
   border-radius: 12px;
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
   overflow: hidden;
 }
 
-.globeSvg {
-  width: 240px;
-  height: 240px;
+.mapImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 12px;
+  display: block;
 }
 
-.globeLines {
-  stroke: rgba(201, 168, 76, 0.3);
-  fill: none;
-  stroke-width: 1;
+.featureIconImg {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
 .contentSide {
@@ -219,7 +234,7 @@
 }
 
 .splitHeading {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Poppins', sans-serif;
   font-size: 34px;
   font-weight: 700;
   color: #8B1A3A;
@@ -250,8 +265,7 @@
 }
 
 .featureIcon {
-  color: #C9A84C;
-  font-size: 20px;
+  display: none;
 }
 
 .featureLabel {
@@ -270,7 +284,7 @@
 }
 
 .globalTitle {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Poppins', sans-serif;
   color: #C9A84C;
   font-size: 36px;
   font-weight: 700;
@@ -313,7 +327,7 @@
 }
 
 .globalCity {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Poppins', sans-serif;
   font-size: 22px;
   font-weight: 700;
   color: #FFFFFF;
@@ -360,7 +374,7 @@
 }
 
 .footerBrand {
-  font-family: 'Playfair Display', serif;
+  font-family: 'Poppins', sans-serif;
   color: #C9A84C;
   font-size: 24px;
   font-weight: 700;

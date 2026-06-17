@@ -103,7 +103,7 @@
   right: 12px;
   background: linear-gradient(96.93deg, #C89B3C 0%, #E8C172 50%, #C89B3C 100%);
   color: #0A1128;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 1px;
@@ -146,7 +146,7 @@
 }
 
 .matchScore {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-size: 12px;
   font-weight: 700;
   color: #C89B3C;
@@ -155,7 +155,7 @@
 }
 
 .profileDetails {
-  font-family: 'Inter', sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-size: 16px;
   font-weight: 400;
   color: #554245;
@@ -174,7 +174,7 @@
   border-radius: 4px;
   background: transparent;
   color: #7A1E3A;
-  font-family: 'Inter', sans-serif;
+  font-family: 'Poppins', sans-serif;
   font-size: 16px;
   font-weight: 400;
   text-align: center;

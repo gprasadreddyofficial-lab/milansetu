@@ -91,7 +91,7 @@ position: relative;
 /* "Life Partner" — Liberation Serif Bold Italic, gold→white gradient */
 .heroHeadlineEm {
   display: block;
-  font-family: 'Liberation Serif', 'Georgia', 'Times New Roman', serif;
+  font-family: 'Poppins', sans-serif;
   font-style: italic;
   font-weight: 700;
   font-size: clamp(30px, 3.8vw, 48px);

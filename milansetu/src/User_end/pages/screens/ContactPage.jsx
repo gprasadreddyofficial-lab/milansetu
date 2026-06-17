@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Header from '../../components/Header';
 import styles from '../styles/contact_page.module.css';
+import contactHeroBg from '../../../assets/User_end_assets/contact_Hero Section.jpg';
 
 export default function ContactPage() {
   const [form, setForm] = useState({
@@ -13,7 +14,6 @@ export default function ContactPage() {
 
   const [errors, setErrors] = useState({});
   const [submitted, setSubmitted] = useState(false);
-  const heroBg = '/images/hero_bg.png';
 
   const validate = () => {
     const newErrors = {};
@@ -56,10 +56,7 @@ export default function ContactPage() {
       <main>
         {/* 1. Hero Section */}
         <section className={styles.hero}>
-          {/* Background image */}
-          <img src={heroBg} alt="Couple in traditional wedding attire" className={styles.heroBg} aria-hidden="true" />
-          
-          {/* Gradient overlay */}
+          <img src={contactHeroBg} alt="Contact us background" className={styles.heroBg} aria-hidden="true" />
           <div className={styles.heroOverlay} aria-hidden="true" />
 
           <div className={styles.heroContent}>

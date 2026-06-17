@@ -2,6 +2,23 @@ import { useState } from 'react';
 import Header from '../../components/Header';
 import styles from '../styles/branches_page.module.css';
 
+// Hero & map
+import branchesBg from '../../../assets/User_end_assets/branches_sec.png';
+import mapImg from '../../../assets/User_end_assets/Map representation.png';
+
+// Branch city icons
+import iconMumbai   from '../../../assets/User_end_assets/Icon (2).png';
+import iconDelhi    from '../../../assets/User_end_assets/Icon (3).png';
+import iconBangalore from '../../../assets/User_end_assets/Icon (4).png';
+import iconHyderabad from '../../../assets/User_end_assets/Icon (5).png';
+import iconPune     from '../../../assets/User_end_assets/Icon (6).png';
+import iconAhmedabad from '../../../assets/User_end_assets/Icon (7).png';
+
+// Info row icons
+import iconPerson   from '../../../assets/User_end_assets/Icon (8).png';
+import iconAddress  from '../../../assets/User_end_assets/Icon (9).png';
+import iconPhone    from '../../../assets/User_end_assets/Icon (10).png';
+
 const indiaBranches = [
   {
     city: 'Mumbai',
@@ -10,7 +27,8 @@ const indiaBranches = [
     manager: 'Mrs. Ananya Kulkarni',
     address: 'Level 12, Heritage Towers, Netaji Subhash Chandra Bose Rd, Mumbai 400020',
     phone: '+91 22 4500 8888',
-    mapLink: 'https://maps.google.com/?q=Heritage+Towers+Marine+Drive+Mumbai'
+    mapLink: 'https://maps.google.com/?q=Heritage+Towers+Marine+Drive+Mumbai',
+    icon: iconMumbai,
   },
   {
     city: 'Delhi',
@@ -18,7 +36,8 @@ const indiaBranches = [
     manager: 'Mr. Vikramaditya Singh',
     address: 'Elite Chambers, Block E, South Extension Part II, New Delhi 110049',
     phone: '+91 11 2625 9900',
-    mapLink: 'https://maps.google.com/?q=South+Extension+II+New+Delhi'
+    mapLink: 'https://maps.google.com/?q=South+Extension+II+New+Delhi',
+    icon: iconDelhi,
   },
   {
     city: 'Bangalore',
@@ -26,7 +45,8 @@ const indiaBranches = [
     manager: 'Ms. Preeti Reddy',
     address: '100 Feet Road, Koramangala 4th Block, Bengaluru 560034',
     phone: '+91 80 4125 7777',
-    mapLink: 'https://maps.google.com/?q=Koramangala+4th+Block+Bangalore'
+    mapLink: 'https://maps.google.com/?q=Koramangala+4th+Block+Bangalore',
+    icon: iconBangalore,
   },
   {
     city: 'Hyderabad',
@@ -34,7 +54,8 @@ const indiaBranches = [
     manager: 'Mr. Sridhar Rao',
     address: 'Royal Plaza, Banjara Hills Rd Number 12, Hyderabad 500034',
     phone: '+91 40 2333 4455',
-    mapLink: 'https://maps.google.com/?q=Banjara+Hills+Hyderabad'
+    mapLink: 'https://maps.google.com/?q=Banjara+Hills+Hyderabad',
+    icon: iconHyderabad,
   },
   {
     city: 'Pune',
@@ -42,7 +63,8 @@ const indiaBranches = [
     manager: 'Mrs. Smita Deshpande',
     address: 'Lane 7, Ashoka Plaza, Koregaon Park, Pune 411001',
     phone: '+91 20 6677 8899',
-    mapLink: 'https://maps.google.com/?q=Koregaon+Park+Pune'
+    mapLink: 'https://maps.google.com/?q=Koregaon+Park+Pune',
+    icon: iconPune,
   },
   {
     city: 'Ahmedabad',
@@ -50,7 +72,8 @@ const indiaBranches = [
     manager: 'Mr. Parthiv Shah',
     address: 'Iscon Emporio, Satellite Road, Ahmedabad 380015',
     phone: '+91 79 4000 5566',
-    mapLink: 'https://maps.google.com/?q=Satellite+Road+Ahmedabad'
+    mapLink: 'https://maps.google.com/?q=Satellite+Road+Ahmedabad',
+    icon: iconAhmedabad,
   }
 ];
 
@@ -74,15 +97,11 @@ const globalCenters = [
 
 export default function BranchesPage() {
   const [email, setEmail] = useState('');
-  const [newsletterStatus, setNewsletterStatus] = useState('idle'); // idle, success, error
-  const heroBg = '/images/hero_bg.png';
+  const [newsletterStatus, setNewsletterStatus] = useState('idle');
 
   const handleNewsletter = (e) => {
     e.preventDefault();
-    if (!email) {
-      setNewsletterStatus('error');
-      return;
-    }
+    if (!email) { setNewsletterStatus('error'); return; }
     setNewsletterStatus('success');
   };
 
@@ -93,17 +112,8 @@ export default function BranchesPage() {
       <main>
         {/* 1. Hero Section */}
         <section className={styles.hero}>
-          {/* Background image */}
-          <img 
-            src={heroBg} 
-            alt="Couple in traditional wedding attire" 
-            className={styles.heroBg} 
-            aria-hidden="true" 
-          />
-          
-          {/* Gradient overlay */}
+          <img src={branchesBg} alt="Branches hero" className={styles.heroBg} aria-hidden="true" />
           <div className={styles.heroOverlay} aria-hidden="true" />
-
           <div className={styles.heroContent}>
             <h1 className={styles.heroHeading}>Our Presence Across India.</h1>
             <p className={styles.heroSubtext}>
@@ -120,13 +130,15 @@ export default function BranchesPage() {
             {indiaBranches.map((branch, idx) => (
               <div key={idx} className={styles.card}>
                 {branch.headOffice && <div className={styles.headOfficeBadge}>HEAD OFFICE</div>}
-                <div className={styles.cardIcon}>🏙️</div>
+                <div className={styles.cardIcon}>
+                  <img src={branch.icon} alt={branch.city} className={styles.cardIconImg} />
+                </div>
                 <h2 className={styles.cityName}>{branch.city}</h2>
                 <span className={styles.areaLabel}>{branch.area}</span>
                 <div className={styles.divider}></div>
-                
+
                 <div className={styles.infoRow}>
-                  <div className={styles.infoIcon}>👤</div>
+                  <img src={iconPerson} alt="manager" className={styles.infoIconImg} />
                   <div className={styles.infoContent}>
                     <span className={styles.infoLabel}>Branch Manager</span>
                     <span className={styles.infoValue}>{branch.manager}</span>
@@ -134,14 +146,14 @@ export default function BranchesPage() {
                 </div>
 
                 <div className={styles.infoRow}>
-                  <div className={styles.infoIcon}>📍</div>
+                  <img src={iconAddress} alt="address" className={styles.infoIconImg} />
                   <div className={styles.infoContent}>
                     <span className={styles.addressValue}>{branch.address}</span>
                   </div>
                 </div>
 
                 <div className={styles.infoRow}>
-                  <div className={styles.infoIcon}>📞</div>
+                  <img src={iconPhone} alt="phone" className={styles.infoIconImg} />
                   <div className={styles.infoContent}>
                     <a href={`tel:${branch.phone.replace(/\s/g, '')}`} className={styles.phoneValue}>
                       {branch.phone}
@@ -160,15 +172,7 @@ export default function BranchesPage() {
         {/* 3. Split Section */}
         <section className={styles.splitSection}>
           <div className={styles.mapSide}>
-            <svg className={styles.globeSvg} viewBox="0 0 200 200">
-              <circle cx="100" cy="100" r="80" className={styles.globeLines} />
-              <circle cx="100" cy="100" r="60" className={styles.globeLines} />
-              <circle cx="100" cy="100" r="40" className={styles.globeLines} />
-              <line x1="20" y1="100" x2="180" y2="100" className={styles.globeLines} />
-              <line x1="100" y1="20" x2="100" y2="180" className={styles.globeLines} />
-              <path d="M40 60 Q100 20 160 60" className={styles.globeLines} />
-              <path d="M40 140 Q100 180 160 140" className={styles.globeLines} />
-            </svg>
+            <img src={mapImg} alt="Map representation" className={styles.mapImg} />
           </div>
           <div className={styles.contentSide}>
             <h2 className={styles.splitHeading}>Meticulous Service, Global Reach.</h2>
@@ -178,15 +182,15 @@ export default function BranchesPage() {
               for a life partner.
             </p>
             <div className={styles.featureRow}>
-              <span className={styles.featureIcon}>🛡️</span>
+              <img src={iconPerson} alt="" className={styles.featureIconImg} />
               <span className={styles.featureLabel}>PRIVATE CONCIERGE ROOMS</span>
             </div>
             <div className={styles.featureRow}>
-              <span className={styles.featureIcon}>👥</span>
+              <img src={iconAddress} alt="" className={styles.featureIconImg} />
               <span className={styles.featureLabel}>ELITE MATCHMAKING EXPERTS</span>
             </div>
             <div className={styles.featureRow}>
-              <span className={styles.featureIcon}>🔒</span>
+              <img src={iconPhone} alt="" className={styles.featureIconImg} />
               <span className={styles.featureLabel}>CONFIDENTIAL PROFILES</span>
             </div>
           </div>

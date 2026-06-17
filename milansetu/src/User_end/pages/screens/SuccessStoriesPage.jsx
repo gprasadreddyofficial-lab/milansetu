@@ -1,5 +1,6 @@
 import Header from '../../components/Header';
 import styles from '../styles/success_stories_page.module.css';
+import succStoryBg from '../../../assets/User_end_assets/succ_story.png';
 
 const stories = [
   {
@@ -47,8 +48,6 @@ const videos = [
 ];
 
 export default function SuccessStoriesPage() {
-  const heroBg = '/images/hero_bg.png';
-
   return (
     <div className={styles.page}>
       <Header />
@@ -57,7 +56,7 @@ export default function SuccessStoriesPage() {
         {/* 1. Hero Section */}
         <section className={styles.hero}>
           {/* Background image */}
-          <img src={heroBg} alt="Couple in traditional wedding attire" className={styles.heroBg} aria-hidden="true" />
+          <img src={succStoryBg} alt="Couple in traditional wedding attire" className={styles.heroBg} aria-hidden="true" />
           
           {/* Gradient overlay */}
           <div className={styles.heroOverlay} aria-hidden="true" />

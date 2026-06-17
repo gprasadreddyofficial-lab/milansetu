@@ -1,6 +1,7 @@
 /* ─── Global Reset & Base ─────────────────────────────────── */
 *, *::before, *::after {
   box-sizing: border-box;
+  font-family: 'Poppins', system-ui, -apple-system, sans-serif !important;
 }
 
 html {
