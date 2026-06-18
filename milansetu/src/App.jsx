@@ -10,6 +10,7 @@ import RegisterPage from './User_end/pages/screens/RegisterPage';
 import DashboardPage from './User_end/pages/screens/DashboardPage';
 import MyProfilePage from './User_end/pages/screens/MyProfilePage';
 import MyMatchesPage from './User_end/pages/screens/MyMatchesPage';
+import MessagesPage from './User_end/pages/screens/MessagesPage';
 import SentInterestsPage from './User_end/pages/screens/SentInterestsPage';
 import ReceivedInterestsPage from './User_end/pages/screens/ReceivedInterestsPage';
 import MeetingsPage from './User_end/pages/screens/MeetingsPage';
@@ -17,20 +18,6 @@ import SubscriptionPlansPage from './User_end/pages/screens/SubscriptionPlansPag
 import NotificationsPage from './User_end/pages/screens/NotificationsPage';
 import SettingsPage from './User_end/pages/screens/SettingsPage';
 import LogoutPage from './User_end/pages/screens/LogoutPage';
-import FloatingChatBox from './User_end/components/FloatingChatBox';
-
-const AUTH_ROUTES = new Set([
-  '#dashboard',
-  '#profile',
-  '#matches',
-  '#sent',
-  '#received',
-  '#meetings',
-  '#subscription',
-  '#notifications',
-  '#settings',
-  '#logout',
-]);
 
 function getPageForRoute(route) {
   switch (route) {
@@ -56,6 +43,8 @@ function getPageForRoute(route) {
       return <MyProfilePage />;
     case '#matches':
       return <MyMatchesPage />;
+    case '#messages':
+      return <MessagesPage />;
     case '#sent':
       return <SentInterestsPage />;
     case '#received':
@@ -85,10 +74,5 @@ export default function App() {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  return (
-    <>
-      {getPageForRoute(route)}
-      {AUTH_ROUTES.has(route) && <FloatingChatBox />}
-    </>
-  );
+  return getPageForRoute(route);
 }

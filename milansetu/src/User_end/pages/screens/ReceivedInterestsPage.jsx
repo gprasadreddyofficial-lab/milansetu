@@ -1,6 +1,7 @@
 import React from 'react';
 import styles from '../styles/received_interests_page.module.css';
 import Sidebar from '../../components/Sidebar';
+import TopBar from '../../components/TopBar';
 
 // Assets
 import proImg from '../../../assets/User_end_assets/pro.png';
@@ -90,49 +91,13 @@ const Icons = {
 };
 
 const ReceivedInterestsPage = () => {
-  const sidebarTopContent = (
-    <div className={styles.sidebarBadgeCard}>
-      <div className={styles.goldCircleIcon}><Icons.Star /></div>
-      <div className={styles.badgeTextInfo}>
-        <span className={styles.shubhMilanBrand}>ShubhMilan</span>
-        <span className={styles.eliteLabel}>ELITE MEMBERSHIP</span>
-      </div>
-    </div>
-  );
-
-  const sidebarBottomContent = (
-    <div style={{ padding: '0 24px 24px' }}>
-      <button className={styles.upgradeBtnPill}>Upgrade to Premium</button>
-      <div className={styles.sidebarFooterLinks}>
-        <div className={styles.sidebarFooterLink}><Icons.Settings /> Settings</div>
-        <div className={`${styles.sidebarFooterLink} ${styles.logoutRed}`}><Icons.Logout /> Logout</div>
-      </div>
-    </div>
-  );
-
   return (
     <div className={styles.container}>
-      <Sidebar 
-        activePage="received" 
-        topContent={sidebarTopContent} 
-        bottomContent={sidebarBottomContent} 
-      />
+      <Sidebar activePage="received" />
 
       <div className={styles.mainLayout}>
         {/* Top Navbar */}
-        <header className={styles.topNavbar}>
-          <div className={styles.logoText}>MilanSetu</div>
-          
-          <div className={styles.searchPill}>
-            <span className={styles.searchIcon}><Icons.Search /></span>
-            <input type="text" placeholder="Search profiles..." className={styles.searchInput} />
-          </div>
-
-          <div className={styles.navActions}>
-            <div className={styles.actionIcon}><Icons.Bell /></div>
-            <img src={pro1Img} alt="User Avatar" className={styles.userAvatar} />
-          </div>
-        </header>
+        <TopBar searchPlaceholder="Search profiles..." />
 
         {/* Content Body */}
         <div className={styles.pageBody}>

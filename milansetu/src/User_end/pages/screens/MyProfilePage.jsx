@@ -1,7 +1,7 @@
 import React from 'react';
 import styles from '../styles/my_profile_page.module.css';
 import Sidebar from '../../components/Sidebar';
-import sidebarStyles from '../styles/sidebar.module.css';
+import TopBar from '../../components/TopBar';
 import ananyaImg from '../../../assets/User_end_assets/pro2.png'; // Using existing asset for Aditya for now
 
 const Icons = {
@@ -88,46 +88,15 @@ const Icons = {
 };
 
 const MyProfilePage = () => {
-  const sidebarBottomContent = (
-    <>
-      <div className={sidebarStyles.membershipBlock}>
-        <span className={sidebarStyles.memberLevel}>Premium Member</span>
-        <span className={sidebarStyles.memberStatus}>ShubhMilan Gold Status</span>
-        <button className={sidebarStyles.profileUpgradeBtn}>Upgrade to Platinum</button>
-      </div>
-      <div className={sidebarStyles.miniNav}>
-        <div className={sidebarStyles.miniNavItem}><Icons.Settings /> Settings</div>
-        <div className={sidebarStyles.miniNavItem}><Icons.Support /> Support</div>
-      </div>
-    </>
-  );
-
   return (
     <div className={styles.dashboardContainer}>
       {/* Sidebar */}
-      <Sidebar activePage="profile" bottomContent={sidebarBottomContent} />
+      <Sidebar activePage="profile" />
 
       {/* Main Content */}
       <main className={styles.mainContent}>
         {/* Top Bar */}
-        <header className={styles.topBar}>
-          <div className={styles.searchContainer}>
-            <span className={styles.searchIcon}><Icons.Search /></span>
-            <input type="text" placeholder="Search connections..." className={styles.searchInput} />
-          </div>
-
-          <div className={styles.topBarActions}>
-            <button className={styles.iconBtn}><Icons.Notifications /></button>
-            <button className={styles.iconBtn}><Icons.Settings /></button>
-            <div className={styles.userBlock}>
-              <div className={styles.userInfo}>
-                <span className={styles.userName}>Aditya Sharma</span>
-                <span className={styles.userRole}>Premium Member</span>
-              </div>
-              <img src={ananyaImg} alt="User Avatar" className={styles.avatar} />
-            </div>
-          </div>
-        </header>
+        <TopBar searchPlaceholder="Search connections..." avatarSrc={ananyaImg} />
 
         <div className={styles.profileBody}>
           {/* Profile Header Card */}

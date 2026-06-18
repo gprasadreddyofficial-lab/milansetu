@@ -1,7 +1,7 @@
 import React from 'react';
 import styles from '../styles/logout_page.module.css';
 import Sidebar from '../../components/Sidebar';
-import pro1Img from '../../../assets/User_end_assets/pro1.png';
+import TopBar from '../../components/TopBar';
 
 // Icons
 const Icons = {
@@ -58,53 +58,15 @@ const Icons = {
 };
 
 const LogoutPage = () => {
-  const sidebarTopContent = (
-    <div className={styles.sidebarHeader}>
-      <div className={styles.starBadge}><Icons.StarSolid /></div>
-      <div>
-        <div className={styles.brandName}>ShubhMilan</div>
-        <div className={styles.eliteSubtitle}>ELITE MEMBERSHIP</div>
-      </div>
-    </div>
-  );
-
-  const sidebarBottomContent = (
-    <div style={{ padding: '0 24px 24px' }}>
-      <button className={styles.upgradePillBtn}>
-        <Icons.Crown /> Upgrade to Platinum
-      </button>
-      <a href="#login" className={styles.logoutLinkRed}>
-        Logout <Icons.LogoutIcon />
-      </a>
-    </div>
-  );
-
   return (
     <div className={styles.container}>
-      <Sidebar 
-        activePage="logout" 
-        topContent={sidebarTopContent}
-        bottomContent={sidebarBottomContent} 
-      />
+      <Sidebar activePage="logout" />
 
       <div className={styles.mainLayout}>
         <div className={styles.overlay}></div>
-        
-        {/* Top Navbar (Transparent over background) */}
-        <header className={styles.topNavbar}>
-          <div className={styles.logoNavText}>MilanSetu</div>
-          
-          <div className={styles.searchPill}>
-            <span className={styles.searchIcon}><Icons.Search /></span>
-            <input type="text" placeholder="Search profiles..." className={styles.searchInput} />
-          </div>
 
-          <div className={styles.navActions}>
-            <div className={styles.actionIcon}><Icons.Bell /></div>
-            <div className={styles.actionIcon}><Icons.Calendar /></div>
-            <img src={pro1Img} alt="User Avatar" className={styles.userAvatar} />
-          </div>
-        </header>
+        {/* Top Bar — consistent with all other pages */}
+        <TopBar searchPlaceholder="Search profiles..." />
 
         {/* Center Modal Card */}
         <div className={styles.modalContainer}>

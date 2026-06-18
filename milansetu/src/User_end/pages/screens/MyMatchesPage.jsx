@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import styles from '../styles/my_matches_page.module.css';
 import Sidebar from '../../components/Sidebar';
-import sidebarStyles from '../styles/sidebar.module.css';
+import TopBar from '../../components/TopBar';
 
 // Assets
 import proImg from '../../../assets/User_end_assets/pro.png';
@@ -66,50 +66,15 @@ const Icons = {
 const MyMatchesPage = () => {
   const [activeTab, setActiveTab] = useState('Highly Recommended');
 
-  const sidebarBottomContent = (
-    <>
-      <div className={sidebarStyles.tierCard}>
-        <div className={sidebarStyles.tierLabel}>CURRENT TIER</div>
-        <div className={sidebarStyles.tierName}>Gold Status</div>
-        <button className={sidebarStyles.upgradeBtn}>Upgrade to Platinum</button>
-      </div>
-      
-      <div className={sidebarStyles.agentFooter}>
-        <img src={proImg} alt="Vikram Singh" className={sidebarStyles.agentAvatar} />
-        <div className={sidebarStyles.agentInfo}>
-          <span className={sidebarStyles.agentName}>Vikram Singh</span>
-          <span className={sidebarStyles.agentID}>ID: SM-9921</span>
-        </div>
-      </div>
-    </>
-  );
-
   return (
     <div className={styles.container}>
       {/* Sidebar */}
-      <Sidebar activePage="matches" bottomContent={sidebarBottomContent} />
+      <Sidebar activePage="matches" />
 
       {/* Main Content */}
       <main className={styles.mainContent}>
         {/* Top Bar */}
-        <header className={styles.topBar}>
-          <div className={styles.searchPill}>
-            <span className={styles.searchIcon}><Icons.Search /></span>
-            <input type="text" placeholder="Search matches..." className={styles.searchInput} />
-          </div>
-
-          <div className={styles.topBarActions}>
-            <button className={styles.iconBtn}><Icons.Notifications /></button>
-            <button className={styles.iconBtn}><Icons.Settings /></button>
-            <div className={styles.userBlock}>
-              <div className={styles.userInfo}>
-                <span className={styles.userName}>Aditya Sharma</span>
-                <span className={styles.userRole}>Premium Member</span>
-              </div>
-              <img src={pro1Img} alt="Aditya Sharma" className={styles.avatar} />
-            </div>
-          </div>
-        </header>
+        <TopBar searchPlaceholder="Search matches..." />
 
         <div className={styles.pageBody}>
           {/* Page Header */}
@@ -174,36 +139,68 @@ const MyMatchesPage = () => {
                   ))}
                 </div>
                 <div className={styles.filtersRow}>
-                  <div className={styles.filterItem}>Religion <Icons.ChevronDown /></div>
-                  <div className={styles.filterItem}>Community <Icons.ChevronDown /></div>
-                  <div className={styles.filterItem}>Location <Icons.ChevronDown /></div>
+                  <div className={styles.filterDropdown}>
+                    <span>Religion</span> <Icons.ChevronDown />
+                  </div>
+                  <div className={styles.filterDropdown}>
+                    <span>Community</span> <Icons.ChevronDown />
+                  </div>
+                  <div className={styles.filterDropdown}>
+                    <span>Location</span> <Icons.ChevronDown />
+                  </div>
                   <div className={styles.moreFilters}><Icons.Sliders /> More Filters</div>
                 </div>
+              </div>
+
+              {/* Match Count */}
+              <div className={styles.matchCount}>
+                Showing <strong>3</strong> matches for <strong>{activeTab}</strong>
               </div>
 
               {/* Match Grid */}
               <div className={styles.matchGrid}>
                 {[
-                  { name: 'Riya Kapoor', age: 27, role: 'Product Designer', loc: 'Bengaluru', match: '96%', tags: ['Bachelors in Arts', 'Hindu, Brahmin'], img: pro3Img },
-                  { name: 'Kavita Iyer', age: 26, role: 'Data Scientist', loc: 'Hyderabad', match: '94%', tags: ['MS, IIT Delhi', 'Vegetarian'], img: proImg },
-                  { name: 'Priya Mehta', age: 28, role: 'Surgeon', loc: 'London', match: '92%', tags: ['MBBS, London', 'NRI Status'], img: pro1Img }
+                  { name: 'Riya Kapoor', age: 27, role: 'Product Designer', loc: 'Bengaluru', match: '96%', tags: ['Arts Graduate', 'Hindu, Brahmin'], img: pro3Img, online: true },
+                  { name: 'Kavita Iyer', age: 26, role: 'Data Scientist', loc: 'Hyderabad', match: '94%', tags: ['MS, IIT Delhi', 'Vegetarian'], img: proImg, online: false },
+                  { name: 'Priya Mehta', age: 28, role: 'Surgeon', loc: 'London', match: '92%', tags: ['MBBS, London', 'NRI Status'], img: pro1Img, online: true }
                 ].map((match, i) => (
                   <div key={i} className={styles.matchCard}>
                     <div className={styles.cardImageWrapper}>
                       <img src={match.img} alt={match.name} className={styles.cardImage} />
+                      {/* Gradient overlay */}
+                      <div className={styles.imageGradient}></div>
+
+                      {/* Top badges */}
                       <div className={styles.verifiedBadge}>
                         <span className={styles.checkIcon}><Icons.Check /></span> VERIFIED
                       </div>
-                      <div className={styles.matchPercentBadge}>{match.match} MATCH</div>
+                      <div className={styles.matchPercentBadge}>{match.match}</div>
+
+                      {/* Online indicator */}
+                      {match.online && (
+                        <div className={styles.onlinePill}>
+                          <span className={styles.onlineDot}></span> Online
+                        </div>
+                      )}
+
+                      {/* Bottom overlay actions (on hover) */}
+                      <div className={styles.imageOverlayActions}>
+                        <button className={styles.overlayBtn} title="Send Interest">♡</button>
+                        <a href="#messages" className={styles.overlayBtn} title="Message">💬</a>
+                      </div>
                     </div>
                     <div className={styles.cardBody}>
-                      <h3 className={styles.matchNameAge}>{match.name}, {match.age}</h3>
-                      <p className={styles.matchSubtitle}>{match.role}, {match.loc}</p>
+                      <div className={styles.cardTopRow}>
+                        <h3 className={styles.matchNameAge}>{match.name}, {match.age}</h3>
+                      </div>
+                      <p className={styles.matchSubtitle}>
+                        <span className={styles.roleIcon}>💼</span> {match.role} • {match.loc}
+                      </p>
                       <div className={styles.tagRow}>
                         {match.tags.map(tag => <span key={tag} className={styles.tag}>{tag}</span>)}
                       </div>
                       <div className={styles.cardActions}>
-                        <button className={styles.smallOutlineBtn}>Profile</button>
+                        <button className={styles.smallOutlineBtn}>View Profile</button>
                         <button className={styles.smallFilledBtn}>Send Interest</button>
                       </div>
                     </div>

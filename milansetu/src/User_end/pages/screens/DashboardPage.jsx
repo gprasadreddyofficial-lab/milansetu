@@ -1,7 +1,7 @@
 import React from 'react';
 import styles from '../styles/dashboard_page.module.css';
 import Sidebar from '../../components/Sidebar';
-import sidebarStyles from '../styles/sidebar.module.css';
+import TopBar from '../../components/TopBar';
 import priyaImg from '../../../assets/User_end_assets/pro.png';
 import arjunImg from '../../../assets/User_end_assets/pro1.png';
 import ananyaImg from '../../../assets/User_end_assets/pro2.png';
@@ -78,24 +78,7 @@ const DashboardPage = () => {
       {/* Main Content */}
       <main className={styles.mainContent}>
         {/* Top Bar */}
-        <header className={styles.topBar}>
-          <div className={styles.searchContainer}>
-            <span className={styles.searchIcon}><Icons.Search /></span>
-            <input type="text" placeholder="Search connections..." className={styles.searchInput} />
-          </div>
-
-          <div className={styles.topBarActions}>
-            <button className={styles.iconBtn}><Icons.Notifications /></button>
-            <button className={styles.iconBtn}><Icons.Settings /></button>
-            <div className={styles.userBlock}>
-              <div className={styles.userInfo}>
-                <span className={styles.userName}>Aditya Sharma</span>
-                <span className={styles.userRole}>Premium Member</span>
-              </div>
-              <img src="https://via.placeholder.com/40" alt="User Avatar" className={styles.avatar} />
-            </div>
-          </div>
-        </header>
+        <TopBar searchPlaceholder="Search connections..." />
 
         <div className={styles.dashboardBody}>
           {/* Hero Banner */}

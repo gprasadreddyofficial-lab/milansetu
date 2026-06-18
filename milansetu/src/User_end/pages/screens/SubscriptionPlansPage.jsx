@@ -2,7 +2,7 @@ import React from 'react';
 import styles from '../styles/subscription_plans_page.module.css';
 import Sidebar from '../../components/Sidebar';
 import sidebarStyles from '../styles/sidebar.module.css';
-import pro1Img from '../../../assets/User_end_assets/pro1.png';
+import TopBar from '../../components/TopBar';
 
 // Icons
 const Icons = {
@@ -59,38 +59,13 @@ const Icons = {
 };
 
 const SubscriptionPlansPage = () => {
-  const sidebarBottomContent = (
-    <div style={{ padding: '0 24px 24px' }}>
-      <button className={sidebarStyles.upgradeBtn} style={{background: 'linear-gradient(135deg, #B68A2E 0%, #C9971F 100%)'}}>Upgrade to Royal</button>
-      <div className={sidebarStyles.sidebarFooterLinks}>
-        <div className={sidebarStyles.sidebarFooterLink}><Icons.HelpCircle /> Help Center</div>
-        <div className={`${sidebarStyles.sidebarFooterLink} ${sidebarStyles.logoutRed}`}><Icons.LogoutIcon /> Logout</div>
-      </div>
-    </div>
-  );
-
   return (
     <div className={styles.container}>
-      <Sidebar 
-        activePage="subscription" 
-        bottomContent={sidebarBottomContent} 
-      />
+      <Sidebar activePage="subscription" />
 
       <div className={styles.mainLayout}>
         {/* Top Navbar */}
-        <header className={styles.topNavbar}>
-          <div className={styles.logoText}>MilanSetu</div>
-          
-          <div className={styles.searchPill}>
-            <span className={styles.searchIcon}><Icons.Search /></span>
-            <input type="text" placeholder="Search profiles..." className={styles.searchInput} />
-          </div>
-
-          <div className={styles.navActions}>
-            <div className={styles.actionIcon}><Icons.Bell /></div>
-            <img src={pro1Img} alt="User Avatar" className={styles.userAvatar} />
-          </div>
-        </header>
+        <TopBar searchPlaceholder="Search plans..." />
 
         {/* Content Body */}
         <div className={styles.pageBody}>

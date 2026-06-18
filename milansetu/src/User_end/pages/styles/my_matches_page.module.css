@@ -18,7 +18,7 @@
 }
 
 .logoBlock {
-  padding: 30px 24px;
+  padding: 10px 24px;
 }
 
 .logoText {
@@ -74,7 +74,7 @@
 }
 
 .sidebarBottom {
-  padding: 24px;
+  padding: 6px 9px;
 }
 
 .tierCard {
@@ -432,6 +432,10 @@
   gap: 40px;
 }
 
+.mainColumn {
+  min-width: 0;
+}
+
 /* Sidebar Cards */
 .sidebarCards {
   display: flex;
@@ -598,12 +602,14 @@
 .filterBar {
   background-color: #fff;
   border-radius: 20px;
-  padding: 12px 24px;
+  padding: 16px 20px;
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 30px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  margin-bottom: 20px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  flex-wrap: wrap;
+  gap: 12px;
 }
 
 .tabs {
@@ -611,37 +617,57 @@
   background-color: #f5f5f5;
   padding: 4px;
   border-radius: 12px;
+  gap: 2px;
 }
 
 .tab {
-  padding: 8px 16px;
-  border-radius: 8px;
+  padding: 8px 18px;
+  border-radius: 10px;
   font-size: 13px;
   font-weight: 600;
-  color: #777;
+  color: #888;
   cursor: pointer;
   transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.tab:hover {
+  color: #555;
 }
 
 .activeTab {
   background-color: #fff;
-  color: #333;
+  color: #800000;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .filtersRow {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
-.filterItem {
+.filterDropdown {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   font-size: 13px;
-  color: #666;
+  font-weight: 500;
+  color: #555;
   cursor: pointer;
+  background-color: #f5f5f5;
+  padding: 7px 14px;
+  border-radius: 20px;
+  border: 1px solid #eee;
+  transition: all 0.2s;
+  user-select: none;
+}
+
+.filterDropdown:hover {
+  background-color: #fff1f2;
+  color: #800000;
+  border-color: #f0d0d0;
 }
 
 .moreFilters {
@@ -652,44 +678,80 @@
   font-weight: 700;
   color: #800000;
   cursor: pointer;
+  padding: 7px 14px;
+  border-radius: 20px;
+  border: 1.5px solid #800000;
+  transition: all 0.2s;
+}
+
+.moreFilters:hover {
+  background-color: #800000;
+  color: #fff;
+}
+
+/* Match count label */
+.matchCount {
+  font-size: 13px;
+  color: #999;
+  margin-bottom: 16px;
+  padding-left: 4px;
+}
+
+.matchCount strong {
+  color: #333;
 }
 
 /* Match Grid */
 .matchGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 24px;
+  gap: 20px;
 }
 
 .matchCard {
   background-color: #fff;
   border-radius: 20px;
   overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-  transition: transform 0.3s;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.07);
+  transition: transform 0.3s, box-shadow 0.3s;
 }
 
 .matchCard:hover {
-  transform: translateY(-5px);
+  transform: translateY(-6px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
 }
 
 .cardImageWrapper {
   position: relative;
   height: 240px;
+  overflow: hidden;
 }
 
 .cardImage {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.4s;
+}
+
+.matchCard:hover .cardImage {
+  transform: scale(1.04);
+}
+
+/* Subtle gradient for readability of overlay elements */
+.imageGradient {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.15) 0%, transparent 40%, transparent 55%, rgba(0,0,0,0.45) 100%);
+  pointer-events: none;
 }
 
 .verifiedBadge {
   position: absolute;
   top: 12px;
   left: 12px;
-  background-color: #fff;
-  padding: 4px 8px;
+  background-color: rgba(255,255,255,0.95);
+  padding: 4px 9px;
   border-radius: 20px;
   font-size: 9px;
   font-weight: 800;
@@ -697,6 +759,7 @@
   display: flex;
   align-items: center;
   gap: 4px;
+  backdrop-filter: blur(4px);
 }
 
 .checkIcon {
@@ -707,37 +770,113 @@
   position: absolute;
   top: 12px;
   right: 12px;
-  background-color: #800000;
+  background: linear-gradient(135deg, #800000, #a00000);
   color: #fff;
-  padding: 4px 8px;
+  padding: 5px 10px;
   border-radius: 20px;
-  font-size: 9px;
+  font-size: 11px;
   font-weight: 800;
+  letter-spacing: 0.3px;
+}
+
+.onlinePill {
+  position: absolute;
+  bottom: 12px;
+  left: 12px;
+  background-color: rgba(255,255,255,0.92);
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #22c55e;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  backdrop-filter: blur(4px);
+}
+
+.onlineDot {
+  width: 8px;
+  height: 8px;
+  background-color: #22c55e;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+/* Hover overlay quick-action buttons */
+.imageOverlayActions {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  display: flex;
+  gap: 8px;
+  opacity: 0;
+  transform: translateY(6px);
+  transition: opacity 0.25s, transform 0.25s;
+}
+
+.matchCard:hover .imageOverlayActions {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.overlayBtn {
+  width: 36px;
+  height: 36px;
+  background-color: rgba(255,255,255,0.92);
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 16px;
+  text-decoration: none;
+  backdrop-filter: blur(4px);
+  transition: background-color 0.15s;
+}
+
+.overlayBtn:hover {
+  background-color: #fff;
 }
 
 .cardBody {
-  padding: 20px;
+  padding: 18px 20px;
 }
 
-.matchNameAge {
-  font-size: 18px;
-  font-weight: 700;
-  color: #333;
+.cardTopRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   margin-bottom: 4px;
 }
 
+.matchNameAge {
+  font-size: 17px;
+  font-weight: 700;
+  color: #222;
+  margin: 0;
+}
+
 .matchSubtitle {
-  font-size: 13px;
+  font-size: 12px;
   color: #888;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
   line-height: 1.4;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.roleIcon {
+  font-size: 12px;
 }
 
 .tagRow {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin-bottom: 20px;
+  gap: 6px;
+  margin-bottom: 16px;
 }
 
 .tag {
@@ -751,19 +890,26 @@
 
 .cardActions {
   display: flex;
-  gap: 12px;
+  gap: 10px;
 }
 
 .smallOutlineBtn {
   flex: 1;
   background: transparent;
-  border: 1px solid #ddd;
-  color: #666;
-  padding: 10px;
+  border: 1.5px solid #ddd;
+  color: #555;
+  padding: 9px;
   border-radius: 10px;
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Poppins', sans-serif;
+}
+
+.smallOutlineBtn:hover {
+  border-color: #800000;
+  color: #800000;
 }
 
 .smallFilledBtn {
@@ -771,11 +917,17 @@
   background-color: #800000;
   border: none;
   color: #fff;
-  padding: 10px;
+  padding: 9px;
   border-radius: 10px;
   font-size: 12px;
   font-weight: 700;
   cursor: pointer;
+  transition: all 0.2s;
+  font-family: 'Poppins', sans-serif;
+}
+
+.smallFilledBtn:hover {
+  background-color: #6a0000;
 }
 
 @media (max-width: 1200px) {

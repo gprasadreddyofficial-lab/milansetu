@@ -1,6 +1,7 @@
 import React from 'react';
 import styles from '../styles/sent_interests_page.module.css';
 import Sidebar from '../../components/Sidebar';
+import TopBar from '../../components/TopBar';
 
 // Assets
 import proImg from '../../../assets/User_end_assets/pro.png';
@@ -54,46 +55,13 @@ const Icons = {
 };
 
 const SentInterestsPage = () => {
-  const sidebarTopContent = (
-    <div className={styles.badgeBlock}>
-      <div className={styles.gemIcon}><Icons.Diamond /></div>
-      <div className={styles.eliteLabel}>Elite Member</div>
-      <div className={styles.memberID}>MEMBERSHIP ID: SM-8829</div>
-    </div>
-  );
-
-  const sidebarBottomContent = (
-    <div style={{ padding: '0 24px 24px' }}>
-      <button className={styles.upgradePill}>Upgrade to Platinum</button>
-      <div className={styles.settingsLink}>
-        <Icons.Settings /> Settings
-      </div>
-    </div>
-  );
-
   return (
     <div className={styles.container}>
-      <Sidebar 
-        activePage="sent" 
-        topContent={sidebarTopContent} 
-        bottomContent={sidebarBottomContent} 
-      />
+      <Sidebar activePage="sent" />
 
       <main className={styles.mainContent}>
         {/* Top Bar */}
-        <header className={styles.topBar}>
-          <a href="#home" className={styles.logo}>MilanSetu</a>
-          <nav className={styles.horizontalNav}>
-            <a href="#dashboard" className={styles.navLink}>Explore</a>
-            <a href="#matches" className={`${styles.navLink} ${styles.activeNavLink}`}>Matches</a>
-            <a href="#dashboard" className={styles.navLink}>Messages</a>
-          </nav>
-          <div className={styles.topBarActions}>
-            <button className={styles.iconBtn}><Icons.Bell /></button>
-            <button className={`${styles.iconBtn} ${styles.medalIcon}`}><Icons.Medal /></button>
-            <img src={pro1Img} alt="User Avatar" className={styles.avatar} />
-          </div>
-        </header>
+        <TopBar searchPlaceholder="Search interests..." />
 
         <div className={styles.pageBody}>
           {/* Header Row */}
@@ -155,7 +123,7 @@ const SentInterestsPage = () => {
                     <span className={styles.tag}>Traveler</span>
                   </div>
                   <div className={styles.cardActions}>
-                    <button className={styles.filledBtn}>Message Now</button>
+                    <a href="#messages" className={styles.filledBtn}>Message Now</a>
                     <button className={styles.moreBtn}>•••</button>
                   </div>
                 </div>

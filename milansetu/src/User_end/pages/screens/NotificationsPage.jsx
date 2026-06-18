@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import styles from '../styles/notifications_page.module.css';
 import Sidebar from '../../components/Sidebar';
+import TopBar from '../../components/TopBar';
 
 // Assets
 import pro1Img from '../../../assets/User_end_assets/pro1.png';
@@ -63,50 +64,15 @@ const Icons = {
 const NotificationsPage = () => {
   const [activeFilter, setActiveFilter] = useState('All');
 
-  const sidebarBottomContent = (
-    <div style={{ padding: '0 24px 24px' }}>
-      <button className={styles.upgradeBtnPlat}>
-        <Icons.Crown /> Upgrade to Platinum
-      </button>
-      <div className={styles.sidebarFooterLinks} style={{ borderTop: 'none', paddingTop: 0 }}>
-        <div className={`${styles.sidebarFooterLink} ${styles.logoutRed}`}>
-          <Icons.Logout /> Logout
-        </div>
-      </div>
-    </div>
-  );
-
   return (
     <div className={styles.container}>
       <Sidebar 
         activePage="notifications" 
-        bottomContent={sidebarBottomContent} 
       />
 
       <div className={styles.mainLayout}>
         {/* Top Navbar */}
-        <header className={styles.topNavbar}>
-          <a href="#home" className={styles.logoText}>MilanSetu</a>
-          
-          <div className={styles.searchPill}>
-            <span className={styles.searchIcon}><Icons.Search /></span>
-            <input type="text" placeholder="Search..." className={styles.searchInput} />
-          </div>
-
-          <div className={styles.navActions}>
-            <div className={styles.heartNavIcon}>
-              <Icons.Heart />
-              <div className={styles.notifDot}></div>
-            </div>
-            
-            <div className={styles.userInfoNav}>
-              <span className={styles.navUserName}>Rajesh K.</span>
-              <span className={styles.navUserPremium}>PREMIUM</span>
-            </div>
-            
-            <img src={pro1Img} alt="Rajesh" className={styles.userAvatar} />
-          </div>
-        </header>
+        <TopBar searchPlaceholder="Search notifications..." />
 
         {/* Content Body */}
         <div className={styles.pageBody}>
