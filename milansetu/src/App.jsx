@@ -17,6 +17,61 @@ import SubscriptionPlansPage from './User_end/pages/screens/SubscriptionPlansPag
 import NotificationsPage from './User_end/pages/screens/NotificationsPage';
 import SettingsPage from './User_end/pages/screens/SettingsPage';
 import LogoutPage from './User_end/pages/screens/LogoutPage';
+import FloatingChatBox from './User_end/components/FloatingChatBox';
+
+const AUTH_ROUTES = new Set([
+  '#dashboard',
+  '#profile',
+  '#matches',
+  '#sent',
+  '#received',
+  '#meetings',
+  '#subscription',
+  '#notifications',
+  '#settings',
+  '#logout',
+]);
+
+function getPageForRoute(route) {
+  switch (route) {
+    case '#about':
+      return <AboutPage />;
+    case '#success':
+      return <SuccessStoriesPage />;
+    case '#membership':
+      return <MembershipPage />;
+    case '#subscription':
+      return <SubscriptionPlansPage />;
+    case '#branches':
+      return <BranchesPage />;
+    case '#contact':
+      return <ContactPage />;
+    case '#login':
+      return <LoginPage />;
+    case '#register':
+      return <RegisterPage />;
+    case '#dashboard':
+      return <DashboardPage />;
+    case '#profile':
+      return <MyProfilePage />;
+    case '#matches':
+      return <MyMatchesPage />;
+    case '#sent':
+      return <SentInterestsPage />;
+    case '#received':
+      return <ReceivedInterestsPage />;
+    case '#meetings':
+      return <MeetingsPage />;
+    case '#notifications':
+      return <NotificationsPage />;
+    case '#settings':
+      return <SettingsPage />;
+    case '#logout':
+      return <LogoutPage />;
+    default:
+      return <HomePage />;
+  }
+}
 
 export default function App() {
   const [route, setRoute] = useState(window.location.hash || '#home');
@@ -30,74 +85,10 @@ export default function App() {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  // Simple routing based on hash
-  if (route === '#about') {
-    return <AboutPage />;
-  }
-  
-  if (route === '#success') {
-    return <SuccessStoriesPage />;
-  }
-
-  if (route === '#membership') {
-    return <MembershipPage />;
-  }
-
-  if (route === '#subscription') {
-    return <SubscriptionPlansPage />;
-  }
-
-  if (route === '#branches') {
-    return <BranchesPage />;
-  }
-
-  if (route === '#contact') {
-    return <ContactPage />;
-  }
-
-  if (route === '#login') {
-    return <LoginPage />;
-  }
-
-  if (route === '#register') {
-    return <RegisterPage />;
-  }
-
-  if (route === '#dashboard') {
-    return <DashboardPage />;
-  }
-
-  if (route === '#profile') {
-    return <MyProfilePage />;
-  }
-
-  if (route === '#matches') {
-    return <MyMatchesPage />;
-  }
-
-  if (route === '#sent') {
-    return <SentInterestsPage />;
-  }
-
-  if (route === '#received') {
-    return <ReceivedInterestsPage />;
-  }
-
-  if (route === '#meetings') {
-    return <MeetingsPage />;
-  }
-
-  if (route === '#notifications') {
-    return <NotificationsPage />;
-  }
-
-  if (route === '#settings') {
-    return <SettingsPage />;
-  }
-
-  if (route === '#logout') {
-    return <LogoutPage />;
-  }
-
-  return <HomePage />;
+  return (
+    <>
+      {getPageForRoute(route)}
+      {AUTH_ROUTES.has(route) && <FloatingChatBox />}
+    </>
+  );
 }
