@@ -1,11 +1,15 @@
 /**
  * auth.js — all API calls related to authentication and profile.
  *
- * Base URL is proxied through Vite to http://127.0.0.1:8000 in dev.
- * Every helper returns { data, error } so callers never have to try/catch.
+ * In dev, Vite proxies /api/* → Django (see vite.config.js).
+ * In production, VITE_API_BASE_URL points to the deployed backend.
  */
 
-const BASE = `${import.meta.env.VITE_API_BASE_URL}api`;
+// In dev the Vite proxy handles /api → Django, so BASE is just "/api".
+// In production VITE_API_BASE_URL is set (e.g. https://milansetu-backend.onrender.com/)
+// and BASE becomes "https://milansetu-backend.onrender.com/api".
+const VITE_BASE = import.meta.env.VITE_API_BASE_URL?.trim() ?? '';
+const BASE = VITE_BASE ? `${VITE_BASE.replace(/\/$/, '')}/api` : '/api';
 
 // ── Token helpers ────────────────────────────────────────────────────────────
 
@@ -20,56 +24,133 @@ export const clearTokens = () => {
   localStorage.removeItem('user');
 };
 
-export const getAccessToken = () => localStorage.getItem('access_token');
+export const getAccessToken  = () => localStorage.getItem('access_token');
 export const getRefreshToken = () => localStorage.getItem('refresh_token');
 
 export const saveUser = (user) =>
   localStorage.setItem('user', JSON.stringify(user));
 
 export const getSavedUser = () => {
-  try {
-    return JSON.parse(localStorage.getItem('user'));
-  } catch {
-    return null;
-  }
+  try { return JSON.parse(localStorage.getItem('user')); }
+  catch { return null; }
 };
+
+/**
+ * Returns true if the string looks like a well-formed JWT
+ * (three base64url segments separated by dots).
+ * Does NOT verify the signature — just sanity-checks format.
+ */
+export function isValidJwtFormat(token) {
+  if (!token || typeof token !== 'string') return false;
+  const parts = token.split('.');
+  if (parts.length !== 3) return false;
+  try {
+    // Each segment must be valid base64url
+    parts.forEach(p => atob(p.replace(/-/g, '+').replace(/_/g, '/')));
+    // Decode payload and check exp
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+    if (!payload.exp) return false;
+    // Reject tokens already expired locally (saves a round-trip)
+    // Allow 10-second clock skew
+    return payload.exp > (Date.now() / 1000) - 10;
+  } catch {
+    return false;
+  }
+}
 
 // ── Generic fetch wrapper ─────────────────────────────────────────────────────
 
-async function request(path, options = {}) {
+// Tracks an in-flight refresh so parallel requests don't each trigger their own
+let _refreshPromise = null;
+
+// Paths that must NOT send an Authorization header (public endpoints)
+const PUBLIC_PATHS = ['/auth/signin/', '/milansetu/signup/', '/auth/token/refresh/'];
+
+async function request(path, options = {}, _isRetry = false) {
   const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
 
-  const token = getAccessToken();
-  if (token) headers['Authorization'] = `Bearer ${token}`;
+  const isPublic = PUBLIC_PATHS.some(p => path.startsWith(p));
+  if (!isPublic) {
+    const token = getAccessToken();
+    // Only attach token if it's a properly formatted JWT — never send garbage
+    if (token && isValidJwtFormat(token)) {
+      headers['Authorization'] = `Bearer ${token}`;
+    } else if (token) {
+      // Token exists but is malformed/expired locally — clear it immediately
+      clearTokens();
+      window.dispatchEvent(new CustomEvent('auth:session-expired'));
+      return { data: null, error: 'Session expired. Please log in again.' };
+    }
+  }
 
   try {
     const res = await fetch(`${BASE}${path}`, { ...options, headers });
     const isJson = res.headers.get('content-type')?.includes('application/json');
-    const data = isJson ? await res.json() : null;
+    const data   = isJson ? await res.json() : null;
+
+    if (res.status === 401 && !_isRetry && data?.code === 'token_not_valid') {
+      const isExpired = Array.isArray(data.messages) &&
+        data.messages.some(m => m.message?.toLowerCase().includes('expired'));
+
+      if (isExpired) {
+        // Access token expired server-side → try refresh once
+        if (!_refreshPromise) {
+          _refreshPromise = _doRefresh().finally(() => { _refreshPromise = null; });
+        }
+        const refreshed = await _refreshPromise;
+        if (refreshed) return request(path, options, true); // retry with new token
+      }
+
+      // Token invalid or refresh failed → clear session
+      clearTokens();
+      window.dispatchEvent(new CustomEvent('auth:session-expired'));
+      return { data: null, error: 'Session expired. Please log in again.' };
+    }
 
     if (!res.ok) {
-      // Flatten DRF error objects into a single readable string
       const msg =
         data?.detail ||
-        Object.values(data || {})
-          .flat()
-          .join(' ') ||
+        Object.values(data || {}).flat().join(' ') ||
         `HTTP ${res.status}`;
       return { data: null, error: msg };
     }
+
     return { data, error: null };
-  } catch (err) {
+  } catch {
     return { data: null, error: 'Network error. Please check your connection.' };
+  }
+}
+
+// Internal helper — returns true if a new access token was successfully obtained
+async function _doRefresh() {
+  const refresh = getRefreshToken();
+  if (!refresh) return false;
+  try {
+    const res = await fetch(`${BASE}/auth/token/refresh/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ refresh }),
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    if (data?.access) {
+      localStorage.setItem('access_token', data.access);
+      if (data?.refresh) localStorage.setItem('refresh_token', data.refresh);
+      return true;
+    }
+    return false;
+  } catch {
+    return false;
   }
 }
 
 // ── Auth endpoints ────────────────────────────────────────────────────────────
 
 /**
- * Sign in with email + password.
- * Returns { id, email, access, refresh } on success.
+ * Sign in — always clears stale tokens first so no old token is ever sent.
  */
 export async function signIn(email, password) {
+  clearTokens();
   return request('/auth/signin/', {
     method: 'POST',
     body: JSON.stringify({ email, password }),
@@ -78,7 +159,6 @@ export async function signIn(email, password) {
 
 /**
  * Register a new user with profile data.
- * Returns { id, email, access, refresh } on success.
  */
 export async function signUp(payload) {
   return request('/milansetu/signup/', {
@@ -88,7 +168,7 @@ export async function signUp(payload) {
 }
 
 /**
- * Refresh the access token using the stored refresh token.
+ * Explicitly refresh the access token (public helper for external use).
  */
 export async function refreshAccessToken() {
   const refresh = getRefreshToken();
@@ -105,17 +185,10 @@ export async function refreshAccessToken() {
 
 // ── Profile endpoints ─────────────────────────────────────────────────────────
 
-/**
- * Fetch the currently authenticated user's profile.
- */
 export async function fetchMyProfile() {
   return request('/milansetu/profile/fetch_detail/');
 }
 
-/**
- * Partially update the authenticated user's profile.
- * @param {object} fields — only the fields you want to change
- */
 export async function updateMyProfile(fields) {
   return request('/milansetu/profile/fetch_detail/', {
     method: 'PATCH',

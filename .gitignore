@@ -1,24 +1,28 @@
-# Logs
-logs
-*.log
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+# ── Node / Vite ───────────────────────────────────────────────
+milansetu/node_modules
+milansetu/dist
+milansetu/dist-ssr
+milansetu/*.local
 
-node_modules
-dist
-dist-ssr
-*.local
+# ── Environment files (never commit secrets) ──────────────────
+milansetu/.env
+milansetu/.env.local
+milansetu/.env.production
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
-.idea
+# ── OS / Editor ───────────────────────────────────────────────
 .DS_Store
+.vscode/
+.idea/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+
+# ── Logs ─────────────────────────────────────────────────────
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
