@@ -2,6 +2,7 @@ import React from 'react';
 import styles from '../styles/dashboard_page.module.css';
 import Sidebar from '../../components/Sidebar';
 import TopBar from '../../components/TopBar';
+import { useAuth } from '../../../context/AuthContext';
 import priyaImg from '../../../assets/User_end_assets/pro.png';
 import arjunImg from '../../../assets/User_end_assets/pro1.png';
 import ananyaImg from '../../../assets/User_end_assets/pro2.png';
@@ -70,6 +71,9 @@ const Icons = {
 };
 
 const DashboardPage = () => {
+  const { user, profile } = useAuth();
+  const displayName = profile?.full_name || user?.email || 'User';
+
   return (
     <div className={styles.dashboardContainer}>
       {/* Sidebar */}
@@ -78,12 +82,12 @@ const DashboardPage = () => {
       {/* Main Content */}
       <main className={styles.mainContent}>
         {/* Top Bar */}
-        <TopBar searchPlaceholder="Search connections..." />
+        <TopBar searchPlaceholder="Search connections..." userName={displayName} />
 
         <div className={styles.dashboardBody}>
           {/* Hero Banner */}
           <section className={styles.heroBanner}>
-            <h1 className={styles.heroHeading}>Welcome back, Aditya!</h1>
+            <h1 className={styles.heroHeading}>Welcome back, {displayName.split(' ')[0]}!</h1>
             <p className={styles.heroSubtext}>
               Your perfect match is waiting. We've found 12 new potential partners that align with your lifestyle and values.
             </p>

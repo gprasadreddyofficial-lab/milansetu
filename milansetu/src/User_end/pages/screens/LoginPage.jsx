@@ -1,67 +1,71 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import styles from '../styles/login_page.module.css';
 import loginCouple from '../../../assets/User_end_assets/login_couple.png';
+import { useAuth } from '../../../context/AuthContext';
 
 export default function LoginPage() {
+  const { login } = useAuth();
+
   const [isOtpView, setIsOtpView] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     identifier: '',
     password: '',
     otp: '',
-    rememberMe: false
+    rememberMe: false,
   });
   const [errors, setErrors] = useState({});
+  const [apiError, setApiError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const [forgotHint, setForgotHint] = useState(false);
 
-  // Handle Forgot Password click
   const handleForgotPassword = () => {
     setForgotHint(true);
     setTimeout(() => setForgotHint(false), 3000);
   };
 
-  // Validate form
   const validate = () => {
     const newErrors = {};
     if (!formData.identifier) {
       newErrors.identifier = 'Mobile Number / Email is required';
     } else {
-      // Basic regex for email or phone
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       const phoneRegex = /^\d{10}$/;
       if (!emailRegex.test(formData.identifier) && !phoneRegex.test(formData.identifier)) {
         newErrors.identifier = 'Please enter a valid email or 10-digit mobile number';
       }
     }
-
-    if (isOtpView) {
-      if (!formData.otp) {
-        newErrors.otp = 'OTP is required';
-      } else if (!/^\d{6}$/.test(formData.otp)) {
-        newErrors.otp = 'Please enter a valid 6-digit OTP';
-      }
+    if (!isOtpView) {
+      if (!formData.password) newErrors.password = 'Password is required';
     } else {
-      if (!formData.password) {
-        newErrors.password = 'Password is required';
-      }
+      if (!formData.otp) newErrors.otp = 'OTP is required';
+      else if (!/^\d{6}$/.test(formData.otp)) newErrors.otp = 'Please enter a valid 6-digit OTP';
     }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSignIn = (e) => {
+  const handleSignIn = async (e) => {
     e.preventDefault();
-    if (validate()) {
-      console.log('Signing in...', formData);
-      console.log('Login successful');
-      window.location.hash = '#dashboard';
+    setApiError('');
+    if (!validate()) return;
+
+    setSubmitting(true);
+    const { error } = await login(formData.identifier.trim().toLowerCase(), formData.password);
+    setSubmitting(false);
+
+    if (error) {
+      setApiError(error);
+      return;
     }
+
+    window.location.hash = '#dashboard';
   };
 
   const toggleFormView = () => {
     setIsOtpView(!isOtpView);
     setErrors({});
+    setApiError('');
   };
 
   return (
@@ -109,6 +113,13 @@ export default function LoginPage() {
         <p className={styles.subtext}>Sign in to continue your matchmaking journey</p>
 
         <div className={styles.formCard}>
+          {/* Global API error */}
+          {apiError && (
+            <div className={styles.apiError} role="alert">
+              {apiError}
+            </div>
+          )}
+
           <form onSubmit={handleSignIn}>
             {/* Identifier Field */}
             <div className={styles.formGroup}>
@@ -128,7 +139,7 @@ export default function LoginPage() {
               {errors.identifier && <span className={styles.errorHint}>{errors.identifier}</span>}
             </div>
 
-            {/* Password or OTP Field */}
+            {/* Password or OTP */}
             {!isOtpView ? (
               <div className={styles.formGroup}>
                 <div className={styles.labelRow}>
@@ -156,7 +167,9 @@ export default function LoginPage() {
                 </div>
                 {errors.password && <span className={styles.errorHint}>{errors.password}</span>}
                 {forgotHint && (
-                  <span className={styles.forgotHint}>A reset link will be sent to your registered email.</span>
+                  <span className={styles.forgotHint}>
+                    A reset link will be sent to your registered email.
+                  </span>
                 )}
               </div>
             ) : (
@@ -195,27 +208,22 @@ export default function LoginPage() {
               </button>
             </div>
 
-            {/* Submit Button */}
-            <button type="submit" className={styles.signInBtn}>
-              Sign In &rarr;
+            {/* Submit */}
+            <button type="submit" className={styles.signInBtn} disabled={submitting}>
+              {submitting ? 'Signing in…' : 'Sign In →'}
             </button>
 
-            {/* Continue with OTP Button (Secondary) */}
             <button
               type="button"
               className={styles.otpBtn}
-              onClick={() => {
-                if (!isOtpView) toggleFormView();
-                else handleSignIn({ preventDefault: () => {} });
-              }}
+              onClick={() => { if (!isOtpView) toggleFormView(); }}
             >
               Continue with OTP
             </button>
           </form>
 
-          {/* Create Account Row */}
           <div className={styles.createAccountRow}>
-            Don't have an account?
+            Don't have an account?{' '}
             <a href="#register" className={styles.createAccountLink}>
               Create Account
             </a>

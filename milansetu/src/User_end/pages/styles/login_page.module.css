@@ -358,3 +358,14 @@
     padding: 60px 20px;
   }
 }
+
+/* ── API error banner ──────────────────────────────────────────────────────── */
+.apiError {
+  background: #fff0f0;
+  color: #c0392b;
+  border: 1px solid #e88;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 13px;
+  margin-bottom: 14px;
+}

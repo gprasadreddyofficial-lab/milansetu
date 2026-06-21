@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import { useAuth } from './context/AuthContext';
+
 import HomePage from './User_end/pages/screens/HomePage';
 import AboutPage from './User_end/pages/screens/AboutPage';
 import SuccessStoriesPage from './User_end/pages/screens/SuccessStoriesPage';
@@ -19,51 +21,46 @@ import NotificationsPage from './User_end/pages/screens/NotificationsPage';
 import SettingsPage from './User_end/pages/screens/SettingsPage';
 import LogoutPage from './User_end/pages/screens/LogoutPage';
 
-function getPageForRoute(route) {
+// Routes that require the user to be logged in
+const PROTECTED_ROUTES = new Set([
+  '#dashboard', '#profile', '#matches', '#messages',
+  '#sent', '#received', '#meetings', '#subscription',
+  '#notifications', '#settings', '#logout',
+]);
+
+function getPageForRoute(route, isLoggedIn) {
+  // Redirect unauthenticated users away from protected pages
+  if (PROTECTED_ROUTES.has(route) && !isLoggedIn) {
+    window.location.hash = '#login';
+    return <LoginPage />;
+  }
+
   switch (route) {
-    case '#about':
-      return <AboutPage />;
-    case '#success':
-      return <SuccessStoriesPage />;
-    case '#membership':
-      return <MembershipPage />;
-    case '#subscription':
-      return <SubscriptionPlansPage />;
-    case '#branches':
-      return <BranchesPage />;
-    case '#contact':
-      return <ContactPage />;
-    case '#login':
-      return <LoginPage />;
-    case '#register':
-      return <RegisterPage />;
-    case '#dashboard':
-      return <DashboardPage />;
-    case '#profile':
-      return <MyProfilePage />;
-    case '#matches':
-      return <MyMatchesPage />;
-    case '#messages':
-      return <MessagesPage />;
-    case '#sent':
-      return <SentInterestsPage />;
-    case '#received':
-      return <ReceivedInterestsPage />;
-    case '#meetings':
-      return <MeetingsPage />;
-    case '#notifications':
-      return <NotificationsPage />;
-    case '#settings':
-      return <SettingsPage />;
-    case '#logout':
-      return <LogoutPage />;
-    default:
-      return <HomePage />;
+    case '#about':         return <AboutPage />;
+    case '#success':       return <SuccessStoriesPage />;
+    case '#membership':    return <MembershipPage />;
+    case '#subscription':  return <SubscriptionPlansPage />;
+    case '#branches':      return <BranchesPage />;
+    case '#contact':       return <ContactPage />;
+    case '#login':         return <LoginPage />;
+    case '#register':      return <RegisterPage />;
+    case '#dashboard':     return <DashboardPage />;
+    case '#profile':       return <MyProfilePage />;
+    case '#matches':       return <MyMatchesPage />;
+    case '#messages':      return <MessagesPage />;
+    case '#sent':          return <SentInterestsPage />;
+    case '#received':      return <ReceivedInterestsPage />;
+    case '#meetings':      return <MeetingsPage />;
+    case '#notifications': return <NotificationsPage />;
+    case '#settings':      return <SettingsPage />;
+    case '#logout':        return <LogoutPage />;
+    default:               return <HomePage />;
   }
 }
 
 export default function App() {
   const [route, setRoute] = useState(window.location.hash || '#home');
+  const { user, loading } = useAuth();
 
   useEffect(() => {
     const handleHashChange = () => {
@@ -74,5 +71,8 @@ export default function App() {
     return () => window.removeEventListener('hashchange', handleHashChange);
   }, []);
 
-  return getPageForRoute(route);
+  // Don't render until we've restored the session from localStorage
+  if (loading) return null;
+
+  return getPageForRoute(route, !!user);
 }

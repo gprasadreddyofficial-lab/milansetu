@@ -1,27 +1,32 @@
 import { useState } from 'react';
 import styles from '../styles/register_page.module.css';
 import loginCouple from '../../../assets/User_end_assets/login_couple.png';
+import { useAuth } from '../../../context/AuthContext';
 
 const TOTAL_STEPS = 4;
 
 const STEP_META = [
-  { step: 1, title: 'Personal Details',     subtitle: 'Basic Information' },
-  { step: 2, title: 'Family Information',   subtitle: 'Your Family Background' },
-  { step: 3, title: 'Career & Education',   subtitle: 'Professional Details' },
-  { step: 4, title: 'Horoscope & Kundali',  subtitle: 'Astrological Details' },
+  { step: 1, title: 'Personal Details',    subtitle: 'Basic Information' },
+  { step: 2, title: 'Family Information',  subtitle: 'Your Family Background' },
+  { step: 3, title: 'Career & Education',  subtitle: 'Professional Details' },
+  { step: 4, title: 'Horoscope & Kundali', subtitle: 'Astrological Details' },
 ];
 
-const RELIGIONS = ['Hindu', 'Muslim', 'Christian', 'Sikh', 'Jain', 'Buddhist', 'Parsi', 'Other'];
-const LANGUAGES = ['Hindi', 'English', 'Tamil', 'Telugu', 'Kannada', 'Malayalam', 'Marathi', 'Bengali', 'Gujarati', 'Punjabi', 'Other'];
+const RELIGIONS       = ['Hindu', 'Muslim', 'Christian', 'Sikh', 'Jain', 'Buddhist', 'Parsi', 'Other'];
+const LANGUAGES       = ['Hindi', 'English', 'Tamil', 'Telugu', 'Kannada', 'Malayalam', 'Marathi', 'Bengali', 'Gujarati', 'Punjabi', 'Other'];
 const MARITAL_STATUSES = ['Never Married', 'Divorced', 'Widowed', 'Awaiting Divorce'];
-const FAMILY_VALUES = ['Traditional', 'Moderate', 'Liberal'];
-const INCOME_UNITS = ['LPA', 'USD/yr', 'GBP/yr'];
-const ZODIAC_SIGNS = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'];
-const MANGLIK = ['Non-Manglik', 'Manglik', 'Partial Manglik'];
+const FAMILY_VALUES   = ['Traditional', 'Moderate', 'Liberal'];
+const INCOME_UNITS    = ['LPA', 'USD/yr', 'GBP/yr'];
+const ZODIAC_SIGNS    = ['Aries', 'Taurus', 'Gemini', 'Cancer', 'Leo', 'Virgo', 'Libra', 'Scorpio', 'Sagittarius', 'Capricorn', 'Aquarius', 'Pisces'];
+const MANGLIK         = ['Non-Manglik', 'Manglik', 'Partial Manglik'];
 
 export default function RegisterPage() {
+  const { register } = useAuth();
+
   const [currentStep, setCurrentStep] = useState(1);
   const [gender, setGender] = useState('female');
+  const [apiError, setApiError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
   const [formData, setFormData] = useState({
     // Step 1 — Personal Details
@@ -35,6 +40,8 @@ export default function RegisterPage() {
     mobile: '',
     countryCode: '+91',
     email: '',
+    password: '',
+    confirm_password: '',
 
     // Step 2 — Family
     father_occupation: '',
@@ -62,17 +69,65 @@ export default function RegisterPage() {
 
   const set = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
 
-  const handleNext = (e) => {
+  const handleNext = async (e) => {
     e.preventDefault();
+    setApiError('');
+
     if (currentStep < TOTAL_STEPS) {
       setCurrentStep(s => s + 1);
-      // Scroll form back to top on step change
       document.querySelector(`.${styles.leftPanel}`)?.scrollTo(0, 0);
-    } else {
-      // Final step — go to dashboard
-      console.log('Final registration data:', { ...formData, gender });
-      window.location.hash = '#dashboard';
+      return;
     }
+
+    // Final step — submit to API
+    setSubmitting(true);
+
+    // Build payload matching the backend SignupSerializer fields
+    const payload = {
+      email: formData.email.trim().toLowerCase(),
+      password: formData.password,
+      confirm_password: formData.confirm_password,
+      phone: formData.mobile ? `${formData.countryCode}${formData.mobile}` : undefined,
+
+      // Profile fields
+      full_name: formData.full_name || undefined,
+      age: formData.age ? Number(formData.age) : undefined,
+      date_of_birth: formData.date_of_birth || undefined,
+      height_cm: formData.height_cm ? Number(formData.height_cm) : undefined,
+      religion: formData.religion || undefined,
+      mother_tongue: formData.mother_tongue || undefined,
+      marital_status: formData.marital_status || undefined,
+      father_occupation: formData.father_occupation || undefined,
+      mother_occupation: formData.mother_occupation || undefined,
+      siblings_count: formData.siblings_count ? Number(formData.siblings_count) : undefined,
+      siblings_details: formData.siblings_details || undefined,
+      family_values: formData.family_values || undefined,
+      industry: formData.industry || undefined,
+      education: formData.education || undefined,
+      current_designation: formData.current_designation || undefined,
+      current_company: formData.current_company || undefined,
+      annual_income_min: formData.annual_income_min ? Number(formData.annual_income_min) : undefined,
+      annual_income_max: formData.annual_income_max ? Number(formData.annual_income_max) : undefined,
+      income_unit: formData.income_unit || undefined,
+      time_of_birth: formData.time_of_birth || undefined,
+      birth_place: formData.birth_place || undefined,
+      zodiac_sign: formData.zodiac_sign || undefined,
+      manglik_status: formData.manglik_status || undefined,
+      kundali_url: formData.kundali_url || undefined,
+    };
+
+    // Remove undefined keys so DRF doesn't complain
+    Object.keys(payload).forEach(k => payload[k] === undefined && delete payload[k]);
+
+    const { error } = await register(payload);
+    setSubmitting(false);
+
+    if (error) {
+      setApiError(error);
+      return;
+    }
+
+    window.location.hash = '#dashboard';
   };
 
   const handleBack = () => {
@@ -87,24 +142,30 @@ export default function RegisterPage() {
       {/* ── LEFT PANEL ─────────────────────────────── */}
       <div className={styles.leftPanel}>
 
-        {/* Step Header */}
         <div className={styles.personalDetailsHeader}>
           <h2>{meta.title}</h2>
           <div className={styles.stepIndicator}>
             <div className={styles.stepCircle}>{currentStep}</div>
             <span>Step {currentStep} of {TOTAL_STEPS}: {meta.subtitle}</span>
           </div>
-          {/* Progress bar */}
           <div className={styles.progressTrack}>
             <div className={styles.progressFill} style={{ width: `${progress}%` }} />
           </div>
-          {/* Step dots */}
           <div className={styles.stepDots}>
             {STEP_META.map(s => (
-              <div key={s.step} className={`${styles.stepDot} ${currentStep >= s.step ? styles.stepDotActive : ''}`} />
+              <div
+                key={s.step}
+                className={`${styles.stepDot} ${currentStep >= s.step ? styles.stepDotActive : ''}`}
+              />
             ))}
           </div>
         </div>
+
+        {apiError && (
+          <div className={styles.apiError} role="alert">
+            {apiError}
+          </div>
+        )}
 
         <form onSubmit={handleNext}>
 
@@ -173,8 +234,7 @@ export default function RegisterPage() {
                   {MARITAL_STATUSES.map(m => (
                     <button key={m} type="button"
                       className={`${styles.pill} ${formData.marital_status === m ? styles.pillActive : ''}`}
-                      onClick={() => set('marital_status', m)}>{m}
-                    </button>
+                      onClick={() => set('marital_status', m)}>{m}</button>
                   ))}
                 </div>
               </div>
@@ -199,6 +259,21 @@ export default function RegisterPage() {
                 <label className={styles.label}>Email Address <span className={styles.req}>*</span></label>
                 <input className={styles.input} type="email" placeholder="rahul@example.com"
                   value={formData.email} onChange={e => set('email', e.target.value)} required />
+              </div>
+
+              <div className={styles.formRow}>
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>Password <span className={styles.req}>*</span></label>
+                  <input className={styles.input} type="password" placeholder="Min 8 characters"
+                    value={formData.password} onChange={e => set('password', e.target.value)}
+                    minLength={8} required />
+                </div>
+                <div className={styles.formGroup}>
+                  <label className={styles.label}>Confirm Password <span className={styles.req}>*</span></label>
+                  <input className={styles.input} type="password" placeholder="Re-enter password"
+                    value={formData.confirm_password} onChange={e => set('confirm_password', e.target.value)}
+                    minLength={8} required />
+                </div>
               </div>
             </>
           )}
@@ -238,8 +313,7 @@ export default function RegisterPage() {
                   {FAMILY_VALUES.map(v => (
                     <button key={v} type="button"
                       className={`${styles.pill} ${formData.family_values === v ? styles.pillActive : ''}`}
-                      onClick={() => set('family_values', v)}>{v}
-                    </button>
+                      onClick={() => set('family_values', v)}>{v}</button>
                   ))}
                 </div>
               </div>
@@ -319,8 +393,7 @@ export default function RegisterPage() {
                   {ZODIAC_SIGNS.map(z => (
                     <button key={z} type="button"
                       className={`${styles.pill} ${formData.zodiac_sign === z ? styles.pillActive : ''}`}
-                      onClick={() => set('zodiac_sign', z)}>{z}
-                    </button>
+                      onClick={() => set('zodiac_sign', z)}>{z}</button>
                   ))}
                 </div>
               </div>
@@ -331,17 +404,18 @@ export default function RegisterPage() {
                   {MANGLIK.map(m => (
                     <button key={m} type="button"
                       className={`${styles.pill} ${formData.manglik_status === m ? styles.pillActive : ''}`}
-                      onClick={() => set('manglik_status', m)}>{m}
-                    </button>
+                      onClick={() => set('manglik_status', m)}>{m}</button>
                   ))}
                 </div>
               </div>
 
               <div className={styles.formGroup}>
-                <label className={styles.label}>Kundali / Horoscope URL <span className={styles.optional}>(optional)</span></label>
+                <label className={styles.label}>
+                  Kundali / Horoscope URL <span className={styles.optional}>(optional)</span>
+                </label>
                 <input className={styles.input} type="url" placeholder="https://link-to-your-kundali.com"
                   value={formData.kundali_url} onChange={e => set('kundali_url', e.target.value)} />
-                <p className={styles.fieldHint}>You can upload or share a link to your Kundali document.</p>
+                <p className={styles.fieldHint}>You can share a link to your Kundali document.</p>
               </div>
 
               <div className={styles.infoBox}>
@@ -358,8 +432,10 @@ export default function RegisterPage() {
                 ← Back
               </button>
             )}
-            <button type="submit" className={styles.saveBtn}>
-              {currentStep === TOTAL_STEPS ? 'Complete Registration →' : 'Save & Continue →'}
+            <button type="submit" className={styles.saveBtn} disabled={submitting}>
+              {currentStep === TOTAL_STEPS
+                ? (submitting ? 'Creating account…' : 'Complete Registration →')
+                : 'Save & Continue →'}
             </button>
           </div>
 
@@ -376,10 +452,10 @@ export default function RegisterPage() {
           </div>
         </div>
 
-        {/* Step progress on right side */}
         <div className={styles.rightStepList}>
           {STEP_META.map(s => (
-            <div key={s.step} className={`${styles.rightStep} ${currentStep === s.step ? styles.rightStepActive : ''} ${currentStep > s.step ? styles.rightStepDone : ''}`}>
+            <div key={s.step}
+              className={`${styles.rightStep} ${currentStep === s.step ? styles.rightStepActive : ''} ${currentStep > s.step ? styles.rightStepDone : ''}`}>
               <div className={styles.rightStepNum}>{currentStep > s.step ? '✓' : s.step}</div>
               <span>{s.title}</span>
             </div>
