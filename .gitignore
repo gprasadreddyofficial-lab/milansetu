@@ -7,7 +7,7 @@ milansetu/*.local
 # ── Environment files (never commit secrets) ──────────────────
 milansetu/.env
 milansetu/.env.local
-milansetu/.env.production
+# .env.production is intentionally committed — it only contains the public backend URL
 
 # ── OS / Editor ───────────────────────────────────────────────
 .DS_Store
