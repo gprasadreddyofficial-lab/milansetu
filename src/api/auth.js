@@ -5,7 +5,7 @@
  * Every helper returns { data, error } so callers never have to try/catch.
  */
 
-const BASE = '/api';
+const BASE = `${import.meta.env.VITE_API_BASE_URL}api`;
 
 // ── Token helpers ────────────────────────────────────────────────────────────
 
