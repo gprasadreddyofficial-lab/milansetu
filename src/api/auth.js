@@ -109,7 +109,7 @@ export async function refreshAccessToken() {
  * Fetch the currently authenticated user's profile.
  */
 export async function fetchMyProfile() {
-  return request('/milansetu/profile/me/');
+  return request('/milansetu/profile/fetch_detail/');
 }
 
 /**
@@ -117,7 +117,7 @@ export async function fetchMyProfile() {
  * @param {object} fields — only the fields you want to change
  */
 export async function updateMyProfile(fields) {
-  return request('/milansetu/profile/me/', {
+  return request('/milansetu/profile/fetch_detail/', {
     method: 'PATCH',
     body: JSON.stringify(fields),
   });

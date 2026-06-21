@@ -8,7 +8,7 @@
  *   login(email, password) → { error } | { error: null }
  *   register(payload)      → { error } | { error: null }
  *   logout()
- *   refreshProfile()       — re-fetches /profile/me/ and updates state
+ *   refreshProfile()       — re-fetches /profile/fetch_detail/ and updates state
  *   updateProfile(fields)  — PATCHes profile and updates state
  */
 
