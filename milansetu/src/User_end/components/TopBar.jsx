@@ -1,6 +1,7 @@
 import React from 'react';
 import styles from '../pages/styles/top_bar.module.css';
 import pro1Img from '../../assets/User_end_assets/pro1.png';
+import AuthenticatedImage from '../../components/AuthenticatedImage';
 
 const Icons = {
   Search: () => (
@@ -59,7 +60,11 @@ const TopBar = ({
             <span className={styles.userName}>{userName}</span>
             <span className={styles.userRole}>{userRole}</span>
           </div>
-          <img src={avatarSrc} alt={userName} className={styles.avatar} />
+          {avatarSrc?.startsWith?.('/api/') ? (
+            <AuthenticatedImage src={avatarSrc} alt={userName} className={styles.avatar} fallbackSrc={pro1Img} />
+          ) : (
+            <img src={avatarSrc} alt={userName} className={styles.avatar} />
+          )}
         </div>
       </div>
     </header>

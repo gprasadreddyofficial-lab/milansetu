@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import styles from '../styles/register_page.module.css';
 import loginCouple from '../../../assets/User_end_assets/login_couple.png';
 import { useAuth } from '../../../context/AuthContext';
@@ -25,6 +25,9 @@ export default function RegisterPage() {
 
   const [currentStep, setCurrentStep] = useState(1);
   const [gender, setGender] = useState('female');
+  const [profilePhoto, setProfilePhoto] = useState(null);
+  const [photoPreview, setPhotoPreview] = useState(null);
+  const photoInputRef = useRef(null);
   const [apiError, setApiError] = useState('');
   const [submitting, setSubmitting] = useState(false);
 
@@ -68,6 +71,13 @@ export default function RegisterPage() {
   });
 
   const set = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
+
+  const handlePhotoChange = (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setProfilePhoto(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  };
 
   const handleNext = async (e) => {
     e.preventDefault();
@@ -119,7 +129,7 @@ export default function RegisterPage() {
     // Remove undefined keys so DRF doesn't complain
     Object.keys(payload).forEach(k => payload[k] === undefined && delete payload[k]);
 
-    const { error } = await register(payload);
+    const { error } = await register(payload, profilePhoto || null);
     setSubmitting(false);
 
     if (error) {
@@ -237,6 +247,36 @@ export default function RegisterPage() {
                       onClick={() => set('marital_status', m)}>{m}</button>
                   ))}
                 </div>
+              </div>
+
+              <div className={styles.formGroup}>
+                <label className={styles.label}>
+                  Profile Photo <span className={styles.optional}>(recommended)</span>
+                </label>
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className={styles.hiddenFileInput}
+                  onChange={handlePhotoChange}
+                />
+                <div className={styles.photoUploadRow}>
+                  {photoPreview ? (
+                    <img src={photoPreview} alt="Preview" className={styles.photoPreview} />
+                  ) : (
+                    <div className={styles.photoPlaceholder}>📷</div>
+                  )}
+                  <button
+                    type="button"
+                    className={styles.photoUploadBtn}
+                    onClick={() => photoInputRef.current?.click()}
+                  >
+                    {profilePhoto ? 'Change Photo' : 'Upload Photo'}
+                  </button>
+                </div>
+                <p className={styles.fieldHint}>
+                  Clear portrait, JPEG/PNG/WebP, max 5 MB. Passed through sensitivity check on upload.
+                </p>
               </div>
 
               <div className={styles.formGroup}>

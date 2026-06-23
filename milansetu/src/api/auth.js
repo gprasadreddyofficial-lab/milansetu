@@ -66,6 +66,38 @@ let _refreshPromise = null;
 // Paths that must NOT send an Authorization header (public endpoints)
 const PUBLIC_PATHS = ['/auth/signin/', '/milansetu/signup/', '/auth/token/refresh/'];
 
+async function requestMultipart(path, formData, { public: isPublic = false, method = 'POST' } = {}) {
+  const headers = {};
+  if (!isPublic) {
+    const token = getAccessToken();
+    if (token && isValidJwtFormat(token)) {
+      headers['Authorization'] = `Bearer ${token}`;
+    } else if (token) {
+      clearTokens();
+      window.dispatchEvent(new CustomEvent('auth:session-expired'));
+      return { data: null, error: 'Session expired. Please log in again.' };
+    }
+  }
+
+  try {
+    const res = await fetch(`${BASE}${path}`, { method, headers, body: formData });
+    const isJson = res.headers.get('content-type')?.includes('application/json');
+    const data = isJson ? await res.json() : null;
+
+    if (!res.ok) {
+      const msg =
+        data?.detail ||
+        Object.values(data || {}).flat().join(' ') ||
+        `HTTP ${res.status}`;
+      return { data: null, error: msg, upgradeRequired: data?.upgrade_required ?? false };
+    }
+
+    return { data, error: null };
+  } catch {
+    return { data: null, error: 'Network error. Please check your connection.' };
+  }
+}
+
 async function request(path, options = {}, _isRetry = false) {
   const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
 
@@ -159,8 +191,20 @@ export async function signIn(email, password) {
 
 /**
  * Register a new user with profile data.
+ * Pass profilePhoto (File) to upload a profile picture during signup.
  */
-export async function signUp(payload) {
+export async function signUp(payload, profilePhoto = null) {
+  if (profilePhoto instanceof File) {
+    const form = new FormData();
+    Object.entries(payload).forEach(([key, value]) => {
+      if (value !== undefined && value !== null && value !== '') {
+        form.append(key, value);
+      }
+    });
+    form.append('profile_photo', profilePhoto);
+    return requestMultipart('/milansetu/signup/', form, { public: true });
+  }
+
   return request('/milansetu/signup/', {
     method: 'POST',
     body: JSON.stringify(payload),
@@ -183,7 +227,7 @@ export async function refreshAccessToken() {
   return result;
 }
 
-// ── Profile endpoints ─────────────────────────────────────────────────────────
+// ── Profile & account endpoints ───────────────────────────────────────────────
 
 export async function fetchMyProfile() {
   return request('/milansetu/profile/fetch_detail/');
@@ -194,4 +238,76 @@ export async function updateMyProfile(fields) {
     method: 'PATCH',
     body: JSON.stringify(fields),
   });
+}
+
+export async function fetchIdealPartner() {
+  return request('/milansetu/ideal-partner/');
+}
+
+export async function updateIdealPartner(fields) {
+  return request('/milansetu/ideal-partner/', {
+    method: 'PATCH',
+    body: JSON.stringify(fields),
+  });
+}
+
+export async function fetchProfiles(query = '') {
+  const qs = query ? (query.startsWith('?') ? query : `?${query}`) : '';
+  return request(`/milansetu/profiles/${qs}`);
+}
+
+export async function fetchProfileById(id) {
+  return request(`/milansetu/profiles/${id}/`);
+}
+
+// ── Sent interests ────────────────────────────────────────────────────────────
+
+export async function fetchSentInterests() {
+  return request('/milansetu/interests/sent/');
+}
+
+export async function fetchSentInterestStats() {
+  return request('/milansetu/interests/sent/stats/');
+}
+
+export async function sendInterest(receiverProfileId, message = '') {
+  return request('/milansetu/interests/sent/', {
+    method: 'POST',
+    body: JSON.stringify({
+      receiver_profile_id: receiverProfileId,
+      message,
+    }),
+  });
+}
+
+export async function withdrawInterest(id) {
+  return request(`/milansetu/interests/sent/${id}/`, {
+    method: 'PATCH',
+    body: JSON.stringify({ action: 'withdraw' }),
+  });
+}
+
+export async function deleteInterest(id) {
+  return request(`/milansetu/interests/sent/${id}/`, { method: 'DELETE' });
+}
+
+// ── Photo gallery ─────────────────────────────────────────────────────────────
+
+export async function fetchGallery() {
+  return request('/milansetu/gallery/');
+}
+
+export async function uploadGalleryImage(file, { setAsProfile = false } = {}) {
+  const form = new FormData();
+  form.append('image', file);
+  if (setAsProfile) form.append('set_as_profile', 'true');
+  return requestMultipart('/milansetu/gallery/', form);
+}
+
+export async function deleteGalleryImage(id) {
+  return request(`/milansetu/gallery/${id}/`, { method: 'DELETE' });
+}
+
+export async function setGalleryProfilePhoto(id) {
+  return request(`/milansetu/gallery/${id}/set-profile/`, { method: 'POST' });
 }

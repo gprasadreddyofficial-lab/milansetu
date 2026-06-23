@@ -1,14 +1,16 @@
-import React from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import styles from '../styles/dashboard_page.module.css';
 import Sidebar from '../../components/Sidebar';
 import TopBar from '../../components/TopBar';
 import { useAuth } from '../../../context/AuthContext';
-import priyaImg from '../../../assets/User_end_assets/pro.png';
-import arjunImg from '../../../assets/User_end_assets/pro1.png';
-import ananyaImg from '../../../assets/User_end_assets/pro2.png';
-import rohanImg from '../../../assets/User_end_assets/pro3.png';
+import { fetchProfiles, fetchSentInterestStats, sendInterest } from '../../../api/auth';
+import AuthenticatedImage from '../../../components/AuthenticatedImage';
+import {
+  calculateProfileCompleteness,
+  getMatchScore,
+  getProfileAvatar,
+} from '../../../utils/profileHelpers';
 
-// SVG Icons
 const Icons = {
   Profile: () => (
     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
@@ -31,22 +33,6 @@ const Icons = {
       <path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
     </svg>
   ),
-  Notifications: () => (
-    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
-      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" /><path d="M13.73 21a2 2 0 0 1-3.46 0" />
-    </svg>
-  ),
-  Settings: () => (
-    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
-      <circle cx="12" cy="12" r="3" />
-      <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z" />
-    </svg>
-  ),
-  Search: () => (
-    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
-      <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-    </svg>
-  ),
   ArrowRight: () => (
     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
       <line x1="5" y1="12" x2="19" y2="12" /><polyline points="12 5 19 12 12 19" />
@@ -67,83 +53,141 @@ const Icons = {
       <rect x="2" y="7" width="20" height="14" rx="2" ry="2" />
       <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
     </svg>
-  )
+  ),
 };
 
 const DashboardPage = () => {
-  const { user, profile } = useAuth();
+  const { user, profile, idealPartner } = useAuth();
+  const [matches, setMatches] = useState([]);
+  const [sentStats, setSentStats] = useState({ total: 0, accepted: 0, pending: 0, response_rate: 0 });
+  const [loadingMatches, setLoadingMatches] = useState(true);
+  const [sendingId, setSendingId] = useState(null);
+
   const displayName = profile?.full_name || user?.email || 'User';
+  const profileCompleteness = calculateProfileCompleteness(profile);
+  const progressOffset = 282.7 - (282.7 * profileCompleteness) / 100;
+
+  useEffect(() => {
+    let active = true;
+    setLoadingMatches(true);
+
+    fetchProfiles().then(({ data }) => {
+      if (!active) return;
+      setMatches(Array.isArray(data) ? data : []);
+      setLoadingMatches(false);
+    });
+
+    fetchSentInterestStats().then(({ data }) => {
+      if (!active || !data) return;
+      setSentStats(data);
+    });
+
+    return () => { active = false; };
+  }, []);
+
+  const topPicks = useMemo(() => {
+    return [...matches]
+      .map((match) => ({
+        ...match,
+        matchScore: getMatchScore(match, idealPartner, profile),
+        img: getProfileAvatar(match),
+      }))
+      .sort((a, b) => b.matchScore - a.matchScore)
+      .slice(0, 3);
+  }, [matches, profile, idealPartner]);
+
+  const analyticsWeeks = useMemo(() => {
+    if (topPicks.length === 0) {
+      return [
+        { label: 'Week 1', h1: 20, h2: 15, h3: 10 },
+        { label: 'Week 2', h1: 25, h2: 18, h3: 12 },
+        { label: 'Week 3', h1: 30, h2: 22, h3: 15 },
+        { label: 'Week 4', h1: 35, h2: 25, h3: 18 },
+      ];
+    }
+
+    return topPicks.map((pick, index) => ({
+      label: `Match ${index + 1}`,
+      h1: pick.matchScore,
+      h2: Math.max(20, pick.matchScore - 15),
+      h3: Math.max(10, pick.matchScore - 30),
+    }));
+  }, [topPicks]);
+
+  const viewProfile = (id) => {
+    window.location.hash = `#profile/${id}`;
+  };
+
+  const handleSendInterest = async (profileId) => {
+    setSendingId(profileId);
+    await sendInterest(profileId);
+    const { data } = await fetchSentInterestStats();
+    if (data) setSentStats(data);
+    setSendingId(null);
+  };
 
   return (
     <div className={styles.dashboardContainer}>
-      {/* Sidebar */}
       <Sidebar activePage="dashboard" />
 
-      {/* Main Content */}
       <main className={styles.mainContent}>
-        {/* Top Bar */}
         <TopBar searchPlaceholder="Search connections..." userName={displayName} />
 
         <div className={styles.dashboardBody}>
-          {/* Hero Banner */}
           <section className={styles.heroBanner}>
             <h1 className={styles.heroHeading}>Welcome back, {displayName.split(' ')[0]}!</h1>
             <p className={styles.heroSubtext}>
-              Your perfect match is waiting. We've found 12 new potential partners that align with your lifestyle and values.
+              {matches.length > 0
+                ? `We've found ${matches.length} potential partner${matches.length === 1 ? '' : 's'} that align with your lifestyle and values.`
+                : 'Complete your profile to start receiving curated matches tailored to your preferences.'}
             </p>
-            <button className={styles.heroCta} onClick={() => window.location.hash = '#matches'}>
+            <button className={styles.heroCta} onClick={() => { window.location.hash = '#matches'; }}>
               Explore Matches <Icons.ArrowRight />
             </button>
           </section>
 
-          {/* Stats Row */}
           <div className={styles.statsRow}>
             <div className={styles.statCard}>
               <span className={styles.statLabel}>Total Matches</span>
-              <span className={styles.statValue}>248</span>
+              <span className={styles.statValue}>{matches.length}</span>
               <div className={styles.statIconContainer}><Icons.Profile /></div>
             </div>
             <div className={styles.statCard}>
               <span className={styles.statLabel}>Sent Interests</span>
-              <span className={styles.statValue}>42</span>
+              <span className={styles.statValue}>{sentStats.total}</span>
               <div className={styles.statIconContainer}><Icons.Sent /></div>
             </div>
             <div className={styles.statCard}>
               <span className={styles.statLabel}>Received</span>
-              <span className={styles.statValue}>15</span>
+              <span className={styles.statValue}>{sentStats.accepted}</span>
               <div className={styles.statIconContainer}><Icons.Matches /></div>
             </div>
             <div className={styles.statCard}>
-              <span className={styles.statLabel}>Upcoming</span>
-              <span className={styles.statValue}>3</span>
+              <span className={styles.statLabel}>Pending</span>
+              <span className={styles.statValue}>{sentStats.pending}</span>
               <div className={styles.statIconContainer}><Icons.Meetings /></div>
             </div>
           </div>
 
-          {/* Analytics & Strength Row */}
           <div className={styles.analyticsSection}>
             <div className={styles.analyticsCard}>
               <div className={styles.cardHeader}>
                 <div>
                   <h3 className={styles.cardTitle}>Match Success Analytics</h3>
-                  <p className={styles.cardSubtitle}>Interest acceptance trends over the last 30 days</p>
-                </div>
-                <div className={styles.filterDropdown}>
-                  Last 30 Days <span>▼</span>
+                  <p className={styles.cardSubtitle}>
+                    {topPicks.length > 0
+                      ? 'Compatibility scores for your top matches'
+                      : 'Add partner preferences to unlock match insights'}
+                  </p>
                 </div>
               </div>
               <div className={styles.chartContainer}>
-                {[
-                  { label: 'Week 1', h1: 40, h2: 30, h3: 20 },
-                  { label: 'Week 2', h1: 50, h2: 35, h3: 25 },
-                  { label: 'Week 3', h1: 60, h2: 40, h3: 30 },
-                  { label: 'Week 4', h1: 80, h2: 50, h3: 40 }
-                ].map((week, i) => (
-                  <div key={i} className={styles.barWrapper}>
+                {analyticsWeeks.map((week) => (
+                  <div key={week.label} className={styles.barWrapper}>
                     <div className={styles.bar}>
-                      <div className={`${styles.barSegment} ${styles.segment1}`} style={{ height: week.h3 }}></div>
-                      <div className={`${styles.barSegment} ${styles.segment2}`} style={{ height: week.h2 }}></div>
-                      <div className={`${styles.barSegment} ${styles.segment3}`} style={{ height: week.h1 }}></div>
+                      <div className={`${styles.barSegment} ${styles.segment1}`} style={{ height: `${week.h3}%` }}></div>
+                      <div className={`${styles.barSegment} ${styles.segment2}`} style={{ height: `${week.h2}%` }}></div>
+                      <div className={`${styles.barSegment} ${styles.segment3}`} style={{ height: `${week.h1}%` }}></div>
                     </div>
                     <span className={styles.barLabel}>{week.label}</span>
                   </div>
@@ -156,62 +200,90 @@ const DashboardPage = () => {
               <div className={styles.progressContainer}>
                 <svg className={styles.progressRing} viewBox="0 0 100 100">
                   <circle cx="50" cy="50" r="45" fill="transparent" stroke="#f2f2f2" strokeWidth="8" />
-                  <circle cx="50" cy="50" r="45" fill="transparent" stroke="#B8860B" strokeWidth="8" 
-                    strokeDasharray="282.7" strokeDashoffset="42.4" strokeLinecap="round" />
+                  <circle
+                    cx="50"
+                    cy="50"
+                    r="45"
+                    fill="transparent"
+                    stroke="#B8860B"
+                    strokeWidth="8"
+                    strokeDasharray="282.7"
+                    strokeDashoffset={progressOffset}
+                    strokeLinecap="round"
+                  />
                 </svg>
                 <div className={styles.progressText}>
-                  <span className={styles.percentValue}>85%</span>
+                  <span className={styles.percentValue}>{profileCompleteness}%</span>
                   <span className={styles.percentLabel}>Complete</span>
                 </div>
               </div>
               <p className={styles.strengthDesc}>
-                Add your professional details to reach 100% and unlock high-quality matches.
+                {profileCompleteness < 100
+                  ? 'Add your professional and partner preference details to reach 100% and unlock high-quality matches.'
+                  : 'Your profile is fully complete. You are ready for premium matchmaking.'}
               </p>
-              <button className={styles.completeProfileBtn}>
+              <button className={styles.completeProfileBtn} onClick={() => { window.location.hash = '#profile'; }}>
                 <Icons.Pencil /> Complete Profile
               </button>
-              <div className={styles.badgeRow}>
-                <div className={`${styles.badgeIcon} ${styles.verifiedBadge}`}>✓</div>
-                <div className={`${styles.badgeIcon} ${styles.workBadge}`}><Icons.Briefcase /></div>
-                <div className={`${styles.badgeIcon} ${styles.securityBadge}`}>🛡</div>
-              </div>
             </div>
           </div>
 
-          {/* Top Picks Section */}
           <section className={styles.topPicksSection}>
             <div className={styles.topPicksHeader}>
               <h2 className={styles.sectionTitle}>Top Picks for You</h2>
-              <a href="#dashboard" className={styles.viewAllLink}>View All ›</a>
+              <a href="#matches" className={styles.viewAllLink}>View All ›</a>
             </div>
+
+            {loadingMatches && (
+              <p className={styles.heroSubtext}>Loading matches…</p>
+            )}
+
+            {!loadingMatches && topPicks.length === 0 && (
+              <p className={styles.heroSubtext}>
+                No matches available yet. As more members join, curated profiles will appear here.
+              </p>
+            )}
+
             <div className={styles.profileGrid}>
-              {[
-                { name: 'Ananya Gupta', age: 26, match: '98%', prof: 'Medical Professional', loc: 'Mumbai', img: ananyaImg },
-                { name: 'Priya Sharma', age: 25, match: '94%', prof: 'Creative Director', loc: 'Bangalore', img: priyaImg },
-                { name: 'Ishani Verma', age: 27, match: '91%', prof: 'UX Designer', loc: 'Delhi', img: rohanImg }
-              ].map((profile, i) => (
-                <div key={i} className={styles.profileCard}>
+              {topPicks.map((match) => (
+                <div key={match.id} className={styles.profileCard}>
                   <div className={styles.imageSection}>
-                    <img src={profile.img} alt={profile.name} className={styles.profilePhoto} />
+                    <AuthenticatedImage
+                      src={match.img}
+                      profile={match}
+                      alt={match.full_name || 'Member'}
+                      className={styles.profilePhoto}
+                    />
                     <div className={styles.imageOverlay}></div>
                     <div className={styles.matchBadge}>
-                      <span className={styles.starIcon}>★</span> {profile.match} Match
+                      <span className={styles.starIcon}>★</span> {match.matchScore}% Match
                     </div>
                     <div className={styles.verifiedTag}>VERIFIED</div>
-                    {i === 2 && <div className={styles.watermark}>Shubh Milan</div>}
-                    <div className={styles.uiIcons}>
-                      <div className={styles.uiIcon}>♡</div>
-                      <div className={styles.uiIcon}>💬</div>
-                    </div>
                   </div>
                   <div className={styles.cardDetails}>
-                    <div className={styles.profileNameAge}>{profile.name}, {profile.age}</div>
+                    <div className={styles.profileNameAge}>
+                      {match.full_name || 'Member'}{match.age ? `, ${match.age}` : ''}
+                    </div>
                     <div className={styles.profileLocation}>
-                      <Icons.Briefcase /> {profile.prof} • {profile.loc}
+                      <Icons.Briefcase />
+                      {match.current_designation || match.education || 'Professional'}
+                      {match.birth_place ? ` • ${match.birth_place}` : ''}
                     </div>
                     <div className={styles.actionRow}>
-                      <button className={styles.sendInterestBtn}>Send Interest</button>
-                      <button className={styles.viewBtn}><Icons.Eye /></button>
+                      <button
+                        className={styles.sendInterestBtn}
+                        onClick={() => handleSendInterest(match.id)}
+                        disabled={sendingId === match.id}
+                      >
+                        {sendingId === match.id ? 'Sending…' : 'Send Interest'}
+                      </button>
+                      <button
+                        className={styles.viewBtn}
+                        onClick={() => viewProfile(match.id)}
+                        title="View profile"
+                      >
+                        <Icons.Eye />
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -219,7 +291,6 @@ const DashboardPage = () => {
             </div>
           </section>
 
-          {/* Footer */}
           <footer className={styles.dashboardFooter}>
             <span>© 2024 ShubhMilan Matrimonial Services. All rights reserved.</span>
             <div className={styles.divider}></div>
