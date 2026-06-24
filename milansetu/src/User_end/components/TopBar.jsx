@@ -1,6 +1,5 @@
 import React from 'react';
 import styles from '../pages/styles/top_bar.module.css';
-import pro1Img from '../../assets/User_end_assets/pro1.png';
 import AuthenticatedImage from '../../components/AuthenticatedImage';
 
 const Icons = {
@@ -34,7 +33,7 @@ const TopBar = ({
   searchPlaceholder = 'Search...',
   userName = 'Aditya Sharma',
   userRole = 'Premium Member',
-  avatarSrc = pro1Img,
+  avatarSrc = null,
 }) => {
   return (
     <header className={styles.topBar}>
@@ -61,9 +60,11 @@ const TopBar = ({
             <span className={styles.userRole}>{userRole}</span>
           </div>
           {avatarSrc?.startsWith?.('/api/') ? (
-            <AuthenticatedImage src={avatarSrc} alt={userName} className={styles.avatar} fallbackSrc={pro1Img} />
-          ) : (
+            <AuthenticatedImage src={avatarSrc} alt={userName} className={styles.avatar} />
+          ) : avatarSrc ? (
             <img src={avatarSrc} alt={userName} className={styles.avatar} />
+          ) : (
+            <div className={styles.avatarPlaceholder} aria-hidden="true" />
           )}
         </div>
       </div>

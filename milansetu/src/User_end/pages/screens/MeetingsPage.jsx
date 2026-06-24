@@ -3,10 +3,7 @@ import styles from '../styles/meetings_page.module.css';
 import Sidebar from '../../components/Sidebar';
 import TopBar from '../../components/TopBar';
 
-// Assets
-import proImg from '../../../assets/User_end_assets/pro.png';
-import pro2Img from '../../../assets/User_end_assets/pro2.png';
-import pro3Img from '../../../assets/User_end_assets/pro3.png';
+import AuthenticatedImage from '../../../components/AuthenticatedImage';
 
 // Icons
 const Icons = {
@@ -122,7 +119,7 @@ const MeetingsPage = () => {
                 <div className={styles.meetingCard}>
                   <div className={styles.cardHeaderRow}>
                     <div className={styles.avatarWrapper}>
-                      <img src={pro2Img} alt="Aria Sharma" className={styles.squareAvatar} />
+                      <AuthenticatedImage alt="Aria Sharma" className={styles.squareAvatar} />
                       <div className={styles.verifiedBadge}>✓</div>
                     </div>
                     <div className={styles.nameInfo}>
@@ -150,7 +147,7 @@ const MeetingsPage = () => {
                 <div className={styles.meetingCard}>
                   <div className={styles.cardHeaderRow}>
                     <div className={styles.avatarWrapper}>
-                      <img src={pro3Img} alt="Ishani Gupta" className={styles.squareAvatar} />
+                      <AuthenticatedImage alt="Ishani Gupta" className={styles.squareAvatar} />
                     </div>
                     <div className={styles.nameInfo}>
                       <div className={styles.cardName}>Ishani Gupta</div>
@@ -306,7 +303,7 @@ const MeetingsPage = () => {
 
               <div className={styles.requestCard}>
                 <div className={styles.reqHeader}>
-                  <img src={proImg} alt="Kavya Desai" className={styles.reqAvatar} />
+                  <AuthenticatedImage alt="Kavya Desai" className={styles.reqAvatar} />
                   <div>
                     <div className={styles.reqName}>Kavya Desai</div>
                     <div className={styles.reqSub}>Requested 2h ago</div>

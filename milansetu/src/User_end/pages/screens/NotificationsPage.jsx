@@ -3,9 +3,8 @@ import styles from '../styles/notifications_page.module.css';
 import Sidebar from '../../components/Sidebar';
 import TopBar from '../../components/TopBar';
 
-// Assets
-import pro1Img from '../../../assets/User_end_assets/pro1.png';
-import proImg from '../../../assets/User_end_assets/pro.png';
+// dynamic avatars
+import AuthenticatedImage from '../../../components/AuthenticatedImage';
 
 // Icons
 const Icons = {
@@ -61,8 +60,37 @@ const Icons = {
   )
 };
 
+const REC_INTERESTS_KEY = 'ms_received_interests_v1';
+
+function getRelativeTime(iso) {
+  if (!iso) return '';
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
 const NotificationsPage = () => {
   const [activeFilter, setActiveFilter] = useState('All');
+  const [receivedInterests, setReceivedInterests] = useState([]);
+
+  // Load received interests from localStorage
+  React.useEffect(() => {
+    const load = () => {
+      try {
+        const raw = localStorage.getItem(REC_INTERESTS_KEY);
+        setReceivedInterests(raw ? JSON.parse(raw) : []);
+      } catch { setReceivedInterests([]); }
+    };
+    load();
+    window.addEventListener('storage', load);
+    return () => window.removeEventListener('storage', load);
+  }, []);
+
+  const showInterests = activeFilter === 'All' || activeFilter === 'Interests';
 
   return (
     <div className={styles.container}>
@@ -100,7 +128,29 @@ const NotificationsPage = () => {
             {/* Feed List */}
             <div className={styles.feedList}>
               
-              {/* Card 1: Interest */}
+            {/* Dynamic Interest Notifications from localStorage */}
+            {showInterests && receivedInterests.length > 0 && receivedInterests.map((interest) => (
+              <div key={interest.id} className={styles.notifCard} style={{ borderLeft: '3px solid #c0392b' }}>
+                <div className={`${styles.iconCircle} ${styles.bgPink}`}><Icons.HeartSolid /></div>
+                <div className={styles.notifContent}>
+                  <div className={styles.notifHeaderRow}>
+                    <div className={styles.notifTitle}>
+                      {interest.name} sent you an Interest Request
+                    </div>
+                    <div className={styles.timestamp}>{getRelativeTime(interest.timestamp)}</div>
+                  </div>
+                  <div className={styles.notifDesc}>
+                    {interest.name}{interest.age ? ` (${interest.age} Yrs` : ''}{interest.role ? `, ${interest.role})` : ')'}  matches your preferences by {interest.match}. They would like to connect.
+                  </div>
+                  <div className={styles.actionRow}>
+                    <button className={styles.btnPrimary} onClick={() => { window.location.hash = '#received'; }}>View Request</button>
+                    <button className={styles.btnOutline} onClick={() => { window.location.hash = '#matches'; }}>Browse Profiles</button>
+                  </div>
+                </div>
+              </div>
+            ))}
+
+            {/* Card 1: Interest */}
               <div className={styles.notifCard}>
                 <div className={`${styles.iconCircle} ${styles.bgPink}`}><Icons.HeartSolid /></div>
                 <div className={styles.notifContent}>
@@ -231,7 +281,7 @@ const NotificationsPage = () => {
 
             {/* Spotlight Match Card */}
             <div className={styles.spotlightCard}>
-              <img src={proImg} alt="Sneha Kapoor" className={styles.spotlightImg} />
+              <AuthenticatedImage alt="Sneha Kapoor" className={styles.spotlightImg} />
               <div className={styles.spotlightOverlay}>
                 <span className={styles.spotLabel}>SPOTLIGHT MATCH</span>
                 <h3 className={styles.spotName}>Sneha Kapoor</h3>

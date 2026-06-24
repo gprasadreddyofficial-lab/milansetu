@@ -35,12 +35,24 @@ export default function AuthenticatedImage({ src, profile, alt = '', className, 
     };
   }, [src]);
 
+  if (resolvedSrc || placeholder) {
+    return (
+      <img
+        src={resolvedSrc || placeholder}
+        alt={alt}
+        className={className}
+        onError={() => setResolvedSrc(null)}
+      />
+    );
+  }
+
+  // Generic SVG placeholder when no image available.
   return (
-    <img
-      src={resolvedSrc || placeholder}
-      alt={alt}
-      className={className}
-      onError={() => setResolvedSrc(null)}
-    />
+    <div className={className} aria-hidden="true" style={{display: 'inline-block'}}>
+      <svg viewBox="0 0 36 36" width="36" height="36" aria-hidden="true">
+        <circle cx="18" cy="12" r="6" fill="#E5E7EB" />
+        <rect x="6" y="22" width="24" height="8" rx="4" fill="#E5E7EB" />
+      </svg>
+    </div>
   );
 }

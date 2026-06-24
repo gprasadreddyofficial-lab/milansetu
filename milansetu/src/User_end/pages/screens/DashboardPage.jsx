@@ -11,6 +11,54 @@ import {
   getProfileAvatar,
 } from '../../../utils/profileHelpers';
 
+const PROFILE_VIEWS_KEY = 'ms_profile_views_v1';
+const RECEIVED_INTERESTS_KEY = 'ms_received_interests_v1';
+
+// Push a profile view to localStorage
+function trackProfileView(match) {
+  try {
+    const raw = localStorage.getItem(PROFILE_VIEWS_KEY);
+    const views = raw ? JSON.parse(raw) : [];
+    // Avoid duplicates by removing old entry for same id
+    const filtered = views.filter(v => v.viewedId !== match.id);
+    filtered.unshift({
+      viewedId: match.id,
+      name: match.full_name || 'Member',
+      avatar: match.img || getProfileAvatar(match),
+      role: match.current_designation || match.education || '',
+      loc: match.birth_place || '',
+      timestamp: new Date().toISOString(),
+    });
+    localStorage.setItem(PROFILE_VIEWS_KEY, JSON.stringify(filtered.slice(0, 20)));
+  } catch {}
+}
+
+// Push to received interests for the other user (localStorage simulation)
+function simulateReceivedInterest(match, fromUser) {
+  try {
+    const raw = localStorage.getItem(RECEIVED_INTERESTS_KEY);
+    const interests = raw ? JSON.parse(raw) : [];
+    const exists = interests.some(i => i.senderId === (fromUser?.id || 'me') && i.receiverId === match.id);
+    if (exists) return;
+    interests.unshift({
+      id: Date.now(),
+      senderId: fromUser?.id || 'me',
+      receiverId: match.id,
+      name: fromUser?.full_name || fromUser?.email || 'Someone',
+      age: fromUser?.age || '',
+      height: fromUser?.height_cm ? `${fromUser.height_cm} cm` : '',
+      role: fromUser?.current_designation || fromUser?.education || 'Professional',
+      match: `${match.matchScore || 0}%`,
+      premium: false,
+      tags: [fromUser?.religion || 'Match'].filter(Boolean),
+      message: 'I am interested in connecting with you.',
+      status: 'pending',
+      timestamp: new Date().toISOString(),
+    });
+    localStorage.setItem(RECEIVED_INTERESTS_KEY, JSON.stringify(interests));
+  } catch {}
+}
+
 const Icons = {
   Profile: () => (
     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
@@ -62,6 +110,9 @@ const DashboardPage = () => {
   const [sentStats, setSentStats] = useState({ total: 0, accepted: 0, pending: 0, response_rate: 0 });
   const [loadingMatches, setLoadingMatches] = useState(true);
   const [sendingId, setSendingId] = useState(null);
+  // Confirmation popup state
+  const [confirmMatch, setConfirmMatch] = useState(null); // match object to confirm interest
+  const [interestSent, setInterestSent] = useState({}); // map of id -> true after sent
 
   const displayName = profile?.full_name || user?.email || 'User';
   const profileCompleteness = calculateProfileCompleteness(profile);
@@ -114,16 +165,25 @@ const DashboardPage = () => {
     }));
   }, [topPicks]);
 
-  const viewProfile = (id) => {
-    window.location.hash = `#profile/${id}`;
+  const viewProfile = (match) => {
+    trackProfileView(match);
+    window.location.hash = `#profile/${match.id}`;
   };
 
-  const handleSendInterest = async (profileId) => {
-    setSendingId(profileId);
-    await sendInterest(profileId);
+  const openConfirm = (match) => setConfirmMatch(match);
+  const closeConfirm = () => setConfirmMatch(null);
+
+  const handleSendInterest = async () => {
+    if (!confirmMatch) return;
+    const match = confirmMatch;
+    closeConfirm();
+    setSendingId(match.id);
+    await sendInterest(match.id);
+    simulateReceivedInterest(match, profile || user);
     const { data } = await fetchSentInterestStats();
     if (data) setSentStats(data);
     setSendingId(null);
+    setInterestSent(prev => ({ ...prev, [match.id]: true }));
   };
 
   return (
@@ -272,14 +332,14 @@ const DashboardPage = () => {
                     <div className={styles.actionRow}>
                       <button
                         className={styles.sendInterestBtn}
-                        onClick={() => handleSendInterest(match.id)}
-                        disabled={sendingId === match.id}
+                        onClick={() => openConfirm(match)}
+                        disabled={sendingId === match.id || interestSent[match.id]}
                       >
-                        {sendingId === match.id ? 'Sending…' : 'Send Interest'}
+                        {interestSent[match.id] ? '✓ Sent' : sendingId === match.id ? 'Sending…' : 'Send Interest'}
                       </button>
                       <button
                         className={styles.viewBtn}
-                        onClick={() => viewProfile(match.id)}
+                        onClick={() => viewProfile(match)}
                         title="View profile"
                       >
                         <Icons.Eye />
@@ -290,6 +350,61 @@ const DashboardPage = () => {
               ))}
             </div>
           </section>
+
+          {/* Send Interest Confirmation Popup */}
+          {confirmMatch && (
+            <div style={{
+              position: 'fixed', inset: 0, zIndex: 1000,
+              background: 'rgba(0,0,0,0.55)', display: 'flex',
+              alignItems: 'center', justifyContent: 'center',
+              backdropFilter: 'blur(4px)',
+            }} onClick={closeConfirm}>
+              <div style={{
+                background: '#fff', borderRadius: '18px', padding: '32px 28px',
+                maxWidth: '400px', width: '90%', boxShadow: '0 20px 60px rgba(0,0,0,0.25)',
+                textAlign: 'center',
+              }} onClick={e => e.stopPropagation()}>
+                <div style={{
+                  width: '64px', height: '64px', borderRadius: '50%',
+                  background: 'linear-gradient(135deg, #7B1F2E, #c0392b)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  margin: '0 auto 16px', fontSize: '28px',
+                }}>💌</div>
+                <h3 style={{ margin: '0 0 8px', fontSize: '20px', color: '#1a1a1a' }}>
+                  Send Interest?
+                </h3>
+                <p style={{ color: '#666', fontSize: '14px', marginBottom: '8px' }}>
+                  You are about to send an interest request to
+                </p>
+                <p style={{ color: '#7B1F2E', fontWeight: 700, fontSize: '16px', marginBottom: '4px' }}>
+                  {confirmMatch.full_name || 'this member'}
+                </p>
+                <p style={{ color: '#888', fontSize: '13px', marginBottom: '24px' }}>
+                  {confirmMatch.matchScore}% Match
+                </p>
+                <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+                  <button
+                    onClick={closeConfirm}
+                    style={{
+                      padding: '10px 24px', borderRadius: '10px',
+                      border: '1.5px solid #ddd', background: '#fff',
+                      color: '#555', fontSize: '14px', cursor: 'pointer',
+                      fontWeight: 600,
+                    }}
+                  >Cancel</button>
+                  <button
+                    onClick={handleSendInterest}
+                    style={{
+                      padding: '10px 24px', borderRadius: '10px',
+                      border: 'none', background: 'linear-gradient(135deg, #7B1F2E, #c0392b)',
+                      color: '#fff', fontSize: '14px', cursor: 'pointer',
+                      fontWeight: 600, boxShadow: '0 4px 15px rgba(123,31,46,0.35)',
+                    }}
+                  >✓ Confirm &amp; Send</button>
+                </div>
+              </div>
+            </div>
+          )}
 
           <footer className={styles.dashboardFooter}>
             <span>© 2024 ShubhMilan Matrimonial Services. All rights reserved.</span>

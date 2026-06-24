@@ -10,50 +10,15 @@ import MobileAppShowcase from '../../components/MobileAppShowcase';
 import styles from '../styles/home_page.module.css';
 import cp from '../styles/curated_profiles.module.css';
 import heroBg from '../../../assets/User_end_assets/hero_bg.png';
-import priyaImg from '../../../assets/User_end_assets/pro.png';
-import arjunImg from '../../../assets/User_end_assets/pro1.png';
-import ananyaImg from '../../../assets/User_end_assets/pro2.png';
-import rohanImg from '../../../assets/User_end_assets/pro3.png';
+import AuthenticatedImage from '../../../components/AuthenticatedImage';
 const slides = [0, 1, 2, 3];
  
 /* ─── Curated Profiles data ──────────────────────────────── */
 const profiles = [
-  {
-    id: 1,
-    name: 'Priya S.',
-    age: 27,
-    profession: 'Fashion Designer',
-    city: 'Mumbai',
-    match: '98%',
-    img: priyaImg,
-  },
-  {
-    id: 2,
-    name: 'Arjun M.',
-    age: 31,
-    profession: 'Tech Lead',
-    city: 'Bangalore',
-    match: '95%',
-    img: arjunImg,
-  },
-  {
-    id: 3,
-    name: 'Ananya K.',
-    age: 25,
-    profession: 'Architect',
-    city: 'Delhi',
-    match: '92%',
-    img: ananyaImg,
-  },
-  {
-    id: 4,
-    name: 'Rohan V.',
-    age: 29,
-    profession: 'Surgeon',
-    city: 'Chennai',
-    match: '89%',
-    img: rohanImg,
-  },
+  { id: 1, name: 'Priya S.', age: 27, profession: 'Fashion Designer', city: 'Mumbai', match: '98%' },
+  { id: 2, name: 'Arjun M.', age: 31, profession: 'Tech Lead', city: 'Bangalore', match: '95%' },
+  { id: 3, name: 'Ananya K.', age: 25, profession: 'Architect', city: 'Delhi', match: '92%' },
+  { id: 4, name: 'Rohan V.', age: 29, profession: 'Surgeon', city: 'Chennai', match: '89%' },
 ];
 
 function HeroSection() {
@@ -224,8 +189,8 @@ function CuratedProfiles() {
       <div className={cp.grid}>
         {profiles.map((p) => (
           <div key={p.id} className={cp.card}>
-            <div className={cp.imageWrap}>
-              <img src={p.img} alt={p.name} className={cp.profileImg} loading="lazy" />
+              <div className={cp.imageWrap}>
+              <AuthenticatedImage alt={p.name} className={cp.profileImg} />
               <span className={cp.verifiedBadge}>
                 <svg className={cp.verifiedTick} viewBox="0 0 12 12" fill="none" xmlns="http://www.w3.org/2000/svg">
                   <path d="M10 3L4.5 8.5L2 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>

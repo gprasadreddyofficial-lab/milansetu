@@ -311,3 +311,39 @@ export async function deleteGalleryImage(id) {
 export async function setGalleryProfilePhoto(id) {
   return request(`/milansetu/gallery/${id}/set-profile/`, { method: 'POST' });
 }
+
+// ── FCM Push Notifications ────────────────────────────────────────────────────
+
+/**
+ * Store or update the FCM device token for the current user.
+ * Called after getFCMToken() on login.
+ */
+export async function storeFCMToken(token) {
+  return request('/milansetu/fcm/token/', {
+    method: 'POST',
+    body: JSON.stringify({ token }),
+  });
+}
+
+// ── Chat / Accepted Interests ─────────────────────────────────────────────────
+
+/**
+ * Fetch interests that have been accepted — these become chat contacts.
+ * Returns both sent-and-accepted and received-and-accepted interests.
+ */
+export async function fetchAcceptedInterests() {
+  return request('/milansetu/interests/accepted/');
+}
+
+// ── Generic apiClient (for use in firebase modules) ──────────────────────────
+
+/**
+ * Thin axios-like object for use inside firebase modules.
+ * Supports: apiClient.post(path, body)
+ */
+export const apiClient = {
+  post: (path, body) =>
+    request(path, { method: 'POST', body: JSON.stringify(body) }),
+  get: (path) => request(path),
+};
+

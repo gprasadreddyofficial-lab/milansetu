@@ -1,13 +1,12 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import styles from '../styles/received_interests_page.module.css';
 import Sidebar from '../../components/Sidebar';
 import TopBar from '../../components/TopBar';
 
 // Assets
-import proImg from '../../../assets/User_end_assets/pro.png';
-import pro1Img from '../../../assets/User_end_assets/pro1.png';
-import pro2Img from '../../../assets/User_end_assets/pro2.png';
-import pro3Img from '../../../assets/User_end_assets/pro3.png';
+// static profile images removed; render dynamic avatars instead
+import AuthenticatedImage from '../../../components/AuthenticatedImage';
 
 // Icons
 const Icons = {
@@ -90,7 +89,57 @@ const Icons = {
   )
 };
 
+const REC_INTERESTS_KEY = 'ms_received_interests_v1';
+
+function getRelativeTime(iso) {
+  if (!iso) return '';
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
 const ReceivedInterestsPage = () => {
+  const [interests, setInterests] = useState(() => {
+    try {
+      const raw = localStorage.getItem(REC_INTERESTS_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  // Reload when localStorage changes (e.g., interest sent from another tab/component)
+  React.useEffect(() => {
+    const load = () => {
+      try {
+        const raw = localStorage.getItem(REC_INTERESTS_KEY);
+        setInterests(raw ? JSON.parse(raw) : []);
+      } catch { setInterests([]); }
+    };
+    window.addEventListener('storage', load);
+    return () => window.removeEventListener('storage', load);
+  }, []);
+
+  const handleAccept = (id) => {
+    setInterests(prev => {
+      const updated = prev.map(i => i.id === id ? { ...i, status: 'accepted' } : i);
+      localStorage.setItem(REC_INTERESTS_KEY, JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const handleDecline = (id) => {
+    setInterests(prev => {
+      const updated = prev.map(i => i.id === id ? { ...i, status: 'declined' } : i);
+      localStorage.setItem(REC_INTERESTS_KEY, JSON.stringify(updated));
+      return updated;
+    });
+  };
+
   return (
     <div className={styles.container}>
       <Sidebar activePage="received" />
@@ -113,95 +162,79 @@ const ReceivedInterestsPage = () => {
             <div className={styles.statsRow}>
               <div className={styles.statCard}>
                 <div className={`${styles.statIconCircle} ${styles.bgPink}`}><Icons.Mail /></div>
-                <div className={styles.statNumber}>128</div>
+                <div className={styles.statNumber}>{interests.length}</div>
                 <div className={styles.statLabel}>Total Received</div>
               </div>
               <div className={styles.statCard}>
                 <div className={`${styles.statIconCircle} ${styles.bgGold}`}><Icons.Clock /></div>
-                <div className={styles.statNumber}>14</div>
+                <div className={styles.statNumber}>{interests.filter(i => i.status === 'pending').length}</div>
                 <div className={styles.statLabel}>Pending Reply</div>
               </div>
               <div className={styles.statCard}>
                 <div className={`${styles.statIconCircle} ${styles.bgGreen}`}><Icons.CheckCircle /></div>
-                <div className={styles.statNumber}>32</div>
+                <div className={styles.statNumber}>{interests.filter(i => i.status === 'accepted').length}</div>
                 <div className={styles.statLabel}>Accepted</div>
               </div>
             </div>
 
             {/* Interest Cards List */}
             <div className={styles.cardList}>
-              
-              {/* Card 1 */}
-              <div className={styles.interestCard}>
+              {interests.length === 0 ? (
+                <div style={{padding: '40px 20px', textAlign: 'center', color: '#999'}}>
+                  <p>No interests received yet. Share your profile to get more matches!</p>
+                </div>
+              ) : (
+                interests.map((interest, i) => (
+              <div key={i} className={styles.interestCard}>
                 <div className={styles.photoSection}>
-                  <img src={pro2Img} alt="Riya Kapoor" className={styles.matchPhoto} />
-                  <div className={styles.ribbonBadge}>PREMIUM</div>
-                  <div className={styles.matchPercentPill}>94% MATCH</div>
+                  <AuthenticatedImage alt={interest.name} className={styles.matchPhoto} />
+                  {interest.premium && <div className={styles.ribbonBadge}>PREMIUM</div>}
+                  <div className={styles.matchPercentPill}>{interest.match} MATCH</div>
                 </div>
                 <div className={styles.cardDetails}>
                   <div className={styles.cardHeaderRow}>
                     <div>
                       <div className={styles.matchName}>
-                        Riya Kapoor <span className={styles.verifiedIcon}><Icons.Verified /></span>
+                        {interest.name} <span className={styles.verifiedIcon}><Icons.Verified /></span>
                       </div>
-                      <div className={styles.matchSubtext}>26 Yrs • 5'5" • Product Designer</div>
+                      <div className={styles.matchSubtext}>{interest.age} Yrs • {interest.height} • {interest.role}</div>
                     </div>
                     <div className={styles.actionIcon}><Icons.MoreHorizontal /></div>
                   </div>
                   
                   <div className={styles.tagRow}>
-                    <span className={styles.tagPill}>B.Des, NIFT</span>
-                    <span className={styles.tagPill}>Mumbai</span>
-                    <span className={styles.tagPill}>Vegetarian</span>
+                    {interest.tags && interest.tags.map((tag, idx) => (
+                      <span key={idx} className={styles.tagPill}>{tag}</span>
+                    ))}
                   </div>
 
                   <div className={styles.messageBox}>
-                    "Hi Aditya, I was really impressed by your profile and our shared interest in art and design. I'd love to connect and get to know you better."
+                    "{interest.message}"
                   </div>
 
                   <div className={styles.actionRow}>
-                    <button className={styles.acceptBtn}>Accept Interest</button>
-                    <button className={styles.declineBtn}>Decline</button>
+                    <button
+                      className={styles.acceptBtn}
+                      onClick={() => handleAccept(interest.id)}
+                      disabled={interest.status !== 'pending'}
+                      style={interest.status === 'accepted' ? { background: '#4caf50', cursor: 'default' } : {}}
+                    >
+                      {interest.status === 'accepted' ? '✓ Accepted' : 'Accept Interest'}
+                    </button>
+                    <button
+                      className={styles.declineBtn}
+                      onClick={() => handleDecline(interest.id)}
+                      disabled={interest.status !== 'pending'}
+                      style={interest.status === 'declined' ? { opacity: 0.5, cursor: 'default' } : {}}
+                    >
+                      {interest.status === 'declined' ? 'Declined' : 'Decline'}
+                    </button>
                     <a href="#received" className={styles.viewProfileLink}>View Full Profile</a>
                   </div>
                 </div>
               </div>
-
-              {/* Card 2 */}
-              <div className={styles.interestCard}>
-                <div className={styles.photoSection}>
-                  <img src={proImg} alt="Kavita Iyer" className={styles.matchPhoto} />
-                  <div className={styles.matchPercentPill}>88% MATCH</div>
-                </div>
-                <div className={styles.cardDetails}>
-                  <div className={styles.cardHeaderRow}>
-                    <div>
-                      <div className={styles.matchName}>
-                        Kavita Iyer <span className={styles.verifiedIcon}><Icons.Verified /></span>
-                      </div>
-                      <div className={styles.matchSubtext}>28 Yrs • 5'6" • Data Scientist</div>
-                    </div>
-                    <div className={styles.actionIcon}><Icons.MoreHorizontal /></div>
-                  </div>
-                  
-                  <div className={styles.tagRow}>
-                    <span className={styles.tagPill}>MS, IIT Delhi</span>
-                    <span className={styles.tagPill}>Bengaluru</span>
-                    <span className={styles.tagPill}>Eggetarian</span>
-                  </div>
-
-                  <div className={styles.messageBox}>
-                    "Hello! Our profiles seem highly compatible based on values and career goals. Let me know if you'd be open to a conversation."
-                  </div>
-
-                  <div className={styles.actionRow}>
-                    <button className={styles.acceptBtn}>Accept Interest</button>
-                    <button className={styles.declineBtn}>Decline</button>
-                    <a href="#received" className={styles.viewProfileLink}>View Full Profile</a>
-                  </div>
-                </div>
-              </div>
-
+              ))
+              )}
             </div>
           </div>
 
@@ -214,7 +247,7 @@ const ReceivedInterestsPage = () => {
               <div className={styles.widgetLabel}>MATCH OF THE DAY</div>
               
               <div className={styles.matchDayProfile}>
-                <img src={pro3Img} alt="Sneha Verma" className={styles.smallAvatar} />
+                <AuthenticatedImage alt="Sneha Verma" className={styles.smallAvatar} />
                 <div>
                   <div className={styles.matchDayName}>Sneha Verma</div>
                   <div className={styles.matchDayProf}>Corporate Lawyer</div>

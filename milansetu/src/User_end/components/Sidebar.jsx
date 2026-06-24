@@ -1,6 +1,6 @@
 import React from 'react';
 import styles from '../pages/styles/sidebar.module.css';
-import proImg from '../../assets/User_end_assets/pro.png';
+// static profile image removed in favor of dynamic avatars
 
 const Icons = {
   Dashboard: () => (

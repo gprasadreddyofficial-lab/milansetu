@@ -1,13 +1,23 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import styles from '../styles/messages_page.module.css';
 import Sidebar from '../../components/Sidebar';
 import TopBar from '../../components/TopBar';
+import AuthenticatedImage from '../../../components/AuthenticatedImage';
+import { useAuth } from '../../../context/AuthContext';
+import { fetchAcceptedInterests } from '../../../api/auth';
+import { initFCM, onForegroundMessage } from '../../../firebase/firebaseNotifications';
+import {
+  getOrCreateConversation,
+  sendMessage,
+  subscribeMessages,
+  subscribeConversations,
+  setTyping,
+  deriveEncryptionKey,
+  convId,
+} from '../../../firebase/firebaseChat';
+import { getProfileAvatar } from '../../../utils/profileHelpers';
 
-import proImg from '../../../assets/User_end_assets/pro.png';
-import pro1Img from '../../../assets/User_end_assets/pro1.png';
-import pro2Img from '../../../assets/User_end_assets/pro2.png';
-import pro3Img from '../../../assets/User_end_assets/pro3.png';
-
+// ── Icons ─────────────────────────────────────────────────────────────────────
 const Icons = {
   Send: () => (
     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
@@ -36,8 +46,7 @@ const Icons = {
   ),
   Emoji: () => (
     <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
-      <circle cx="12" cy="12" r="10" />
-      <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+      <circle cx="12" cy="12" r="10" /><path d="M8 14s1.5 2 4 2 4-2 4-2" />
       <line x1="9" y1="9" x2="9.01" y2="9" /><line x1="15" y1="9" x2="15.01" y2="9" />
     </svg>
   ),
@@ -56,109 +65,277 @@ const Icons = {
       <polyline points="17 1 21 5 7 19" /><path d="M1 12l4 4L15 5" />
     </svg>
   ),
+  Lock: () => (
+    <svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2">
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
+  ),
 };
 
-const CONTACTS = [
-  {
-    id: 1,
-    name: 'Ananya Gupta',
-    role: 'Software Engineer',
-    img: proImg,
-    online: true,
-    lastMessage: 'Thank you! Looking forward to connecting.',
-    lastTime: '10:32 AM',
-    unread: 2,
-    match: '94%',
-  },
-  {
-    id: 2,
-    name: 'Riya Kapoor',
-    role: 'Product Designer',
-    img: pro2Img,
-    online: true,
-    lastMessage: 'Sure, let me know when you\'re free!',
-    lastTime: 'Yesterday',
-    unread: 0,
-    match: '96%',
-  },
-  {
-    id: 3,
-    name: 'Priya Mehta',
-    role: 'Surgeon',
-    img: pro1Img,
-    online: false,
-    lastMessage: 'I\'d love to know more about your interests.',
-    lastTime: 'Mon',
-    unread: 0,
-    match: '92%',
-  },
-  {
-    id: 4,
-    name: 'Kavita Iyer',
-    role: 'Data Scientist',
-    img: pro3Img,
-    online: false,
-    lastMessage: 'Hello! Our profiles seem highly compatible.',
-    lastTime: 'Sun',
-    unread: 0,
-    match: '88%',
-  },
-];
+// ── Toast notification component ──────────────────────────────────────────────
+function Toast({ message, onDismiss }) {
+  useEffect(() => {
+    const t = setTimeout(onDismiss, 4000);
+    return () => clearTimeout(t);
+  }, [onDismiss]);
 
-const INITIAL_CHAT = {
-  1: [
-    { id: 1, sender: 'them', text: 'Hello! I saw your profile and found it very interesting.', time: '10:20 AM', read: true },
-    { id: 2, sender: 'me', text: 'Hi Ananya! Thank you, your profile is impressive too. Are you based in Delhi?', time: '10:22 AM', read: true },
-    { id: 3, sender: 'them', text: 'Yes, I\'m in Delhi currently. I work at Google here. What about you?', time: '10:25 AM', read: true },
-    { id: 4, sender: 'me', text: 'I\'m a Software Architect here in Delhi too! What a coincidence.', time: '10:27 AM', read: true },
-    { id: 5, sender: 'them', text: 'Thank you! Looking forward to connecting.', time: '10:32 AM', read: false },
-  ],
-  2: [
-    { id: 1, sender: 'me', text: 'Hi Riya, I noticed we share a passion for design. Would love to chat!', time: '9:00 AM', read: true },
-    { id: 2, sender: 'them', text: 'Sure, let me know when you\'re free!', time: 'Yesterday', read: true },
-  ],
-  3: [
-    { id: 1, sender: 'them', text: 'I\'d love to know more about your interests.', time: 'Mon', read: true },
-  ],
-  4: [
-    { id: 1, sender: 'them', text: 'Hello! Our profiles seem highly compatible.', time: 'Sun', read: true },
-  ],
-};
+  return (
+    <div style={{
+      position: 'fixed', top: '80px', right: '24px', zIndex: 9999,
+      background: 'linear-gradient(135deg, #7B1F2E, #c0392b)',
+      color: '#fff', borderRadius: '14px', padding: '14px 20px',
+      boxShadow: '0 8px 32px rgba(123,31,46,0.4)',
+      maxWidth: '320px', animation: 'slideInRight 0.3s ease',
+      display: 'flex', flexDirection: 'column', gap: '4px',
+    }}>
+      <div style={{ fontWeight: 700, fontSize: '14px' }}>{message.title}</div>
+      <div style={{ fontSize: '13px', opacity: 0.9 }}>{message.body}</div>
+    </div>
+  );
+}
 
+function formatTime(ts) {
+  if (!ts) return '';
+  const d = ts instanceof Date ? ts : new Date(ts);
+  return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function formatConvTime(ts) {
+  if (!ts) return '';
+  const d = ts instanceof Date ? ts : new Date(ts);
+  const now = new Date();
+  const diffDays = Math.floor((now - d) / 86400000);
+  if (diffDays === 0) return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  if (diffDays === 1) return 'Yesterday';
+  return d.toLocaleDateString([], { day: 'numeric', month: 'short' });
+}
+
+// ── Firebase config check ─────────────────────────────────────────────────────
+function isFirebaseConfigured() {
+  try {
+    // Import is already done; if the projectId is a placeholder, Firebase won't work
+    const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID;
+    // Also check if the config in firebase.js has been filled in
+    // We'll try to detect unconfigured state via a flag
+    return typeof projectId === 'string' && projectId.length > 0 && !projectId.includes('REPLACE');
+  } catch {
+    return false;
+  }
+}
+
+// ── Main MessagesPage ─────────────────────────────────────────────────────────
 const MessagesPage = () => {
-  const [selectedContact, setSelectedContact] = useState(CONTACTS[0]);
-  const [chats, setChats] = useState(INITIAL_CHAT);
+  const { user, profile } = useAuth();
+  const myUid = user?.id;
+
+  const [contacts, setContacts] = useState([]);
+  const [loadingContacts, setLoadingContacts] = useState(true);
+  const [selectedContact, setSelectedContact] = useState(null);
+  const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
+  const [sending, setSending] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [typingTimeout, setTypingTimeout] = useState(null);
+  const [toast, setToast] = useState(null);
+  const [firebaseReady, setFirebaseReady] = useState(false);
+  const [encKey, setEncKey] = useState(null);
+  const [currentConvId, setCurrentConvId] = useState(null);
+  const [convMap, setConvMap] = useState({}); // convId → lastMessage preview
+
   const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
+  const msgUnsubRef = useRef(null);
+  const convUnsubRef = useRef(null);
 
-  const currentMessages = chats[selectedContact.id] || [];
+  // ── Load accepted contacts from backend ──────────────────────────────────
+  useEffect(() => {
+    if (!myUid) return;
+    setLoadingContacts(true);
+    fetchAcceptedInterests().then(({ data }) => {
+      if (!data) { setLoadingContacts(false); return; }
+      const contactList = data.map((item) => {
+        const p = item.profile || {};
+        return {
+          id: item.other_user_id,
+          name: p.full_name || item.other_user_email,
+          role: p.current_designation || p.education || 'Member',
+          match: `${item.match_score}%`,
+          avatarUrl: null, // loaded by AuthenticatedImage
+          profileData: p,
+          online: false,
+          status: 'accepted',
+          lastMessage: 'Click to start chatting',
+          lastTime: '',
+          unread: 0,
+        };
+      });
+      setContacts(contactList);
+      if (contactList.length > 0 && !selectedContact) {
+        setSelectedContact(contactList[0]);
+      }
+      setLoadingContacts(false);
+    });
+  }, [myUid]);
 
+  // ── Init Firebase and FCM ────────────────────────────────────────────────
+  useEffect(() => {
+    if (!myUid) return;
+
+    // Try to init Firebase (will gracefully fail if not configured)
+    const checkFirebase = async () => {
+      try {
+        // Check if firebase modules loaded correctly by testing db object
+        const { db } = await import('../../../firebase/firebaseChat');
+        if (db !== undefined) {
+          setFirebaseReady(true);
+          initFCM().catch(() => {});
+        }
+      } catch {
+        setFirebaseReady(false);
+      }
+    };
+    checkFirebase();
+  }, [myUid]);
+
+  // ── Subscribe to conversations list (for last message preview) ────────────
+  useEffect(() => {
+    if (!firebaseReady || !myUid) return;
+
+    convUnsubRef.current?.();
+    convUnsubRef.current = subscribeConversations(myUid, (convs) => {
+      const map = {};
+      convs.forEach(c => { map[c.id] = c; });
+      setConvMap(map);
+    });
+    return () => convUnsubRef.current?.();
+  }, [firebaseReady, myUid]);
+
+  // ── Foreground FCM notifications ─────────────────────────────────────────
+  useEffect(() => {
+    if (!firebaseReady) return;
+    let unsubFCM = null;
+    onForegroundMessage(({ title, body, data }) => {
+      // Don't show toast if we're already in the relevant chat
+      const isCurrentChat = data?.sender_id && String(data.sender_id) === String(selectedContact?.id);
+      if (!isCurrentChat) {
+        setToast({ title, body });
+      }
+    }).then(unsub => { unsubFCM = unsub; });
+    return () => { if (typeof unsubFCM === 'function') unsubFCM(); };
+  }, [firebaseReady, selectedContact]);
+
+  // ── Open a conversation with a contact ────────────────────────────────────
+  useEffect(() => {
+    if (!selectedContact || !myUid || !firebaseReady) return;
+
+    // Clean up previous listener
+    msgUnsubRef.current?.();
+    setMessages([]);
+
+    const openConv = async () => {
+      const cid = await getOrCreateConversation(myUid, selectedContact.id);
+      setCurrentConvId(cid);
+
+      const key = await deriveEncryptionKey(myUid, selectedContact.id);
+      setEncKey(key);
+
+      msgUnsubRef.current = subscribeMessages(cid, key, (msgs) => {
+        setMessages(msgs);
+        setTimeout(() => messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }), 50);
+      });
+    };
+    openConv();
+
+    return () => msgUnsubRef.current?.();
+  }, [selectedContact, myUid, firebaseReady]);
+
+  // ── Scroll to bottom when messages update ────────────────────────────────
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [currentMessages]);
+  }, [messages]);
 
-  const handleSend = (e) => {
-    e.preventDefault();
-    const trimmed = input.trim();
-    if (!trimmed) return;
+  // ── Send message ──────────────────────────────────────────────────────────
+  const handleSend = useCallback(async (e) => {
+    e?.preventDefault();
+    const text = input.trim();
+    if (!text || !selectedContact || sending) return;
 
-    const now = new Date();
-    const time = now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-
-    setChats((prev) => ({
-      ...prev,
-      [selectedContact.id]: [
-        ...(prev[selectedContact.id] || []),
-        { id: Date.now(), sender: 'me', text: trimmed, time, read: false },
-      ],
-    }));
     setInput('');
+    setSending(true);
+
+    if (firebaseReady && currentConvId && encKey) {
+      try {
+        await sendMessage(currentConvId, myUid, text, encKey);
+      } catch (err) {
+        console.error('[Chat] Send failed:', err);
+        // Fallback: store in localStorage
+        const key = `ms_chat_fallback_${myUid}_${selectedContact.id}`;
+        const prev = JSON.parse(localStorage.getItem(key) || '[]');
+        prev.push({ id: Date.now(), text, senderId: myUid, timestamp: new Date(), read: false });
+        localStorage.setItem(key, JSON.stringify(prev));
+      }
+    } else {
+      // Firebase not configured — use localStorage fallback
+      const key = `ms_chat_fallback_${myUid}_${selectedContact.id}`;
+      const prev = JSON.parse(localStorage.getItem(key) || '[]');
+      const newMsg = { id: Date.now(), text, senderId: myUid, timestamp: new Date().toISOString(), read: false };
+      prev.push(newMsg);
+      localStorage.setItem(key, JSON.stringify(prev));
+      setMessages(p => [...p, { ...newMsg, timestamp: new Date() }]);
+    }
+
+    setSending(false);
+    inputRef.current?.focus();
+  }, [input, selectedContact, sending, firebaseReady, currentConvId, encKey, myUid]);
+
+  // ── Typing indicator ──────────────────────────────────────────────────────
+  const handleInputChange = (e) => {
+    setInput(e.target.value);
+    if (!firebaseReady || !currentConvId || !myUid) return;
+    clearTimeout(typingTimeout);
+    setTyping(currentConvId, myUid, true).catch(() => {});
+    setTypingTimeout(setTimeout(() => {
+      setTyping(currentConvId, myUid, false).catch(() => {});
+    }, 2000));
   };
 
-  const filteredContacts = CONTACTS.filter((c) =>
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  };
+
+  // ── Fallback localStorage messages (when Firebase not configured) ─────────
+  useEffect(() => {
+    if (firebaseReady || !selectedContact || !myUid) return;
+    const key = `ms_chat_fallback_${myUid}_${selectedContact.id}`;
+    const raw = localStorage.getItem(key);
+    if (raw) {
+      const msgs = JSON.parse(raw).map(m => ({ ...m, timestamp: new Date(m.timestamp) }));
+      setMessages(msgs);
+    } else {
+      setMessages([]);
+    }
+  }, [selectedContact, myUid, firebaseReady]);
+
+  const filteredContacts = contacts.filter(c =>
     c.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+  const getLastMsgPreview = (contact) => {
+    const cid = convId(myUid, contact.id);
+    const conv = convMap[cid];
+    if (conv?.lastMessage) return '🔒 Encrypted message';
+    return contact.lastMessage || 'Click to start chatting';
+  };
+
+  const getLastMsgTime = (contact) => {
+    const cid = convId(myUid, contact.id);
+    const conv = convMap[cid];
+    return conv?.updatedAt ? formatConvTime(conv.updatedAt) : contact.lastTime || '';
+  };
 
   return (
     <div className={styles.container}>
@@ -167,12 +344,25 @@ const MessagesPage = () => {
       <main className={styles.mainContent}>
         <TopBar searchPlaceholder="Search connections..." />
 
+        {/* FCM Toast */}
+        {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}
+
         <div className={styles.messagesLayout}>
           {/* Left: Conversations List */}
           <aside className={styles.contactsPanel}>
             <div className={styles.contactsHeader}>
               <h2 className={styles.contactsTitle}>Messages</h2>
-              <span className={styles.contactsCount}>{CONTACTS.reduce((a, c) => a + c.unread, 0)} new</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                {firebaseReady && (
+                  <span style={{
+                    display: 'flex', alignItems: 'center', gap: '4px',
+                    fontSize: '11px', color: '#4caf50', fontWeight: 600,
+                  }}>
+                    <Icons.Lock /> E2E Encrypted
+                  </span>
+                )}
+                <span className={styles.contactsCount}>{contacts.length} chats</span>
+              </div>
             </div>
 
             <div className={styles.searchBar}>
@@ -187,108 +377,210 @@ const MessagesPage = () => {
             </div>
 
             <div className={styles.contactList}>
-              {filteredContacts.map((contact) => (
-                <div
-                  key={contact.id}
-                  className={`${styles.contactItem} ${selectedContact.id === contact.id ? styles.contactActive : ''}`}
-                  onClick={() => setSelectedContact(contact)}
-                >
-                  <div className={styles.avatarWrapper}>
-                    <img src={contact.img} alt={contact.name} className={styles.contactAvatar} />
-                    {contact.online && <span className={styles.onlineDot}></span>}
-                  </div>
-                  <div className={styles.contactInfo}>
-                    <div className={styles.contactTopRow}>
-                      <span className={styles.contactName}>{contact.name}</span>
-                      <span className={styles.contactTime}>{contact.lastTime}</span>
-                    </div>
-                    <div className={styles.contactBottomRow}>
-                      <span className={styles.lastMessage}>{contact.lastMessage}</span>
-                      {contact.unread > 0 && (
-                        <span className={styles.unreadBadge}>{contact.unread}</span>
-                      )}
-                    </div>
-                  </div>
+              {loadingContacts ? (
+                <div className={styles.emptyContacts}>
+                  <p style={{ color: '#999' }}>Loading contacts…</p>
                 </div>
-              ))}
+              ) : filteredContacts.length === 0 ? (
+                <div className={styles.emptyContacts}>
+                  <p>No conversations found.</p>
+                  <p>
+                    Accept interest requests to start chatting.{' '}
+                    <span
+                      style={{ color: '#7B1F2E', cursor: 'pointer', fontWeight: 600 }}
+                      onClick={() => { window.location.hash = '#received'; }}
+                    >
+                      View Requests →
+                    </span>
+                  </p>
+                </div>
+              ) : (
+                filteredContacts.map((contact) => (
+                  <div
+                    key={contact.id}
+                    className={`${styles.contactItem} ${selectedContact?.id === contact.id ? styles.contactActive : ''}`}
+                    onClick={() => setSelectedContact(contact)}
+                  >
+                    <div className={styles.avatarWrapper}>
+                      <AuthenticatedImage
+                        src={contact.avatarUrl}
+                        profile={contact.profileData}
+                        alt={contact.name}
+                        className={styles.contactAvatar}
+                      />
+                      {contact.online && <span className={styles.onlineDot}></span>}
+                    </div>
+                    <div className={styles.contactInfo}>
+                      <div className={styles.contactTopRow}>
+                        <span className={styles.contactName}>{contact.name}</span>
+                        <span className={styles.contactTime}>{getLastMsgTime(contact)}</span>
+                      </div>
+                      <div className={styles.contactBottomRow}>
+                        <span className={styles.lastMessage}>{getLastMsgPreview(contact)}</span>
+                        <span style={{
+                          fontSize: '10px', color: '#7B1F2E', fontWeight: 600,
+                          background: '#fdf0f2', padding: '2px 6px', borderRadius: '6px',
+                        }}>
+                          {contact.match}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
             </div>
           </aside>
 
           {/* Right: Chat Window */}
           <section className={styles.chatPanel}>
-            {/* Chat Header */}
-            <div className={styles.chatHeader}>
-              <div className={styles.chatHeaderLeft}>
-                <div className={styles.chatAvatarWrapper}>
-                  <img src={selectedContact.img} alt={selectedContact.name} className={styles.chatAvatar} />
-                  {selectedContact.online && <span className={styles.chatOnlineDot}></span>}
-                </div>
-                <div className={styles.chatHeaderInfo}>
-                  <div className={styles.chatContactName}>{selectedContact.name}</div>
-                  <div className={styles.chatContactSub}>
-                    {selectedContact.online ? (
-                      <span className={styles.onlineLabel}>Online now</span>
-                    ) : (
-                      <span className={styles.offlineLabel}>{selectedContact.role}</span>
-                    )}
-                    <span className={styles.matchBadge}>✦ {selectedContact.match} Match</span>
-                  </div>
-                </div>
-              </div>
-              <div className={styles.chatHeaderActions}>
-                <button className={styles.headerActionBtn} title="Voice call"><Icons.Phone /></button>
-                <button className={styles.headerActionBtn} title="Video call"><Icons.Video /></button>
-                <button className={styles.headerActionBtn}><Icons.MoreVertical /></button>
-              </div>
-            </div>
-
-            {/* Messages Area */}
-            <div className={styles.messagesArea}>
-              <div className={styles.dateDivider}>Today</div>
-
-              {currentMessages.map((msg) => (
-                <div
-                  key={msg.id}
-                  className={`${styles.messageRow} ${msg.sender === 'me' ? styles.messageRowMe : styles.messageRowThem}`}
-                >
-                  {msg.sender === 'them' && (
-                    <img src={selectedContact.img} alt="" className={styles.msgAvatar} />
-                  )}
-                  <div className={`${styles.bubble} ${msg.sender === 'me' ? styles.bubbleMe : styles.bubbleThem}`}>
-                    <p className={styles.bubbleText}>{msg.text}</p>
-                    <div className={styles.bubbleMeta}>
-                      <span className={styles.msgTime}>{msg.time}</span>
-                      {msg.sender === 'me' && (
-                        <span className={msg.read ? styles.readIcon : styles.sentIcon}>
-                          {msg.read ? <Icons.CheckCheck /> : <Icons.Check />}
-                        </span>
-                      )}
+            {selectedContact ? (
+              <>
+                {/* Chat Header */}
+                <div className={styles.chatHeader}>
+                  <div className={styles.chatHeaderLeft}>
+                    <div className={styles.chatAvatarWrapper}>
+                      <AuthenticatedImage
+                        src={selectedContact.avatarUrl}
+                        profile={selectedContact.profileData}
+                        alt={selectedContact.name}
+                        className={styles.chatAvatar}
+                      />
+                      {selectedContact.online && <span className={styles.chatOnlineDot}></span>}
+                    </div>
+                    <div className={styles.chatHeaderInfo}>
+                      <div className={styles.chatContactName}>{selectedContact.name}</div>
+                      <div className={styles.chatContactSub}>
+                        <span className={styles.offlineLabel}>{selectedContact.role}</span>
+                        <span className={styles.matchBadge}>✦ {selectedContact.match} Match</span>
+                        {firebaseReady && (
+                          <span style={{
+                            display: 'inline-flex', alignItems: 'center', gap: '3px',
+                            fontSize: '11px', color: '#4caf50', fontWeight: 600,
+                          }}>
+                            <Icons.Lock /> End-to-end encrypted
+                          </span>
+                        )}
+                      </div>
                     </div>
                   </div>
+                  <div className={styles.chatHeaderActions}>
+                    <button className={styles.headerActionBtn} title="Voice call"><Icons.Phone /></button>
+                    <button className={styles.headerActionBtn} title="Video call"><Icons.Video /></button>
+                    <button className={styles.headerActionBtn}><Icons.MoreVertical /></button>
+                  </div>
                 </div>
-              ))}
-              <div ref={messagesEndRef} />
-            </div>
 
-            {/* Input Area */}
-            <form className={styles.inputArea} onSubmit={handleSend}>
-              <button type="button" className={styles.inputActionBtn} title="Emoji"><Icons.Emoji /></button>
-              <button type="button" className={styles.inputActionBtn} title="Attach file"><Icons.Attach /></button>
-              <input
-                type="text"
-                className={styles.messageInput}
-                placeholder={`Message ${selectedContact.name}...`}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-              />
-              <button
-                type="submit"
-                className={`${styles.sendBtn} ${input.trim() ? styles.sendBtnActive : ''}`}
-                disabled={!input.trim()}
-              >
-                <Icons.Send />
-              </button>
-            </form>
+                {/* Firebase not configured banner */}
+                {!firebaseReady && (
+                  <div style={{
+                    background: '#fff8e6', border: '1px solid #f0c040',
+                    padding: '10px 20px', fontSize: '13px', color: '#7a5500',
+                    display: 'flex', alignItems: 'center', gap: '8px',
+                  }}>
+                    ⚠️ <strong>Firebase not configured yet.</strong>
+                    Messages are saved locally. Add your Firebase credentials in{' '}
+                    <code style={{ background: '#ffe', padding: '1px 4px', borderRadius: '4px' }}>
+                      src/firebase/firebase.js
+                    </code>{' '}
+                    to enable real-time encrypted chat.
+                  </div>
+                )}
+
+                {/* Messages Area */}
+                <div className={styles.messagesArea}>
+                  {firebaseReady && (
+                    <div style={{
+                      textAlign: 'center', padding: '12px 0 4px',
+                      fontSize: '11px', color: '#aaa',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
+                    }}>
+                      <Icons.Lock /> Messages are end-to-end encrypted with AES-256-GCM
+                    </div>
+                  )}
+
+                  <div className={styles.dateDivider}>Today</div>
+
+                  {messages.length === 0 && (
+                    <div style={{ textAlign: 'center', padding: '40px 20px', color: '#bbb' }}>
+                      <div style={{ fontSize: '40px', marginBottom: '12px' }}>💬</div>
+                      <p style={{ fontWeight: 600, color: '#999' }}>Start the conversation!</p>
+                      <p style={{ fontSize: '13px' }}>Say hi to {selectedContact.name}</p>
+                    </div>
+                  )}
+
+                  {messages.map((msg) => {
+                    const isMe = String(msg.senderId) === String(myUid);
+                    return (
+                      <div
+                        key={msg.id}
+                        className={`${styles.messageRow} ${isMe ? styles.messageRowMe : styles.messageRowThem}`}
+                      >
+                        {!isMe && (
+                          <AuthenticatedImage
+                            src={selectedContact.avatarUrl}
+                            profile={selectedContact.profileData}
+                            alt=""
+                            className={styles.msgAvatar}
+                          />
+                        )}
+                        <div className={`${styles.bubble} ${isMe ? styles.bubbleMe : styles.bubbleThem}`}>
+                          <p className={styles.bubbleText}>{msg.text}</p>
+                          <div className={styles.bubbleMeta}>
+                            <span className={styles.msgTime}>{formatTime(msg.timestamp)}</span>
+                            {isMe && (
+                              <span className={msg.read ? styles.readIcon : styles.sentIcon}>
+                                {msg.read ? <Icons.CheckCheck /> : <Icons.Check />}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <div ref={messagesEndRef} />
+                </div>
+
+                {/* Input Area */}
+                <form className={styles.inputArea} onSubmit={handleSend}>
+                  <button type="button" className={styles.inputActionBtn} title="Emoji"><Icons.Emoji /></button>
+                  <button type="button" className={styles.inputActionBtn} title="Attach file"><Icons.Attach /></button>
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    className={styles.messageInput}
+                    placeholder={`Message ${selectedContact.name}…`}
+                    value={input}
+                    onChange={handleInputChange}
+                    onKeyDown={handleKeyDown}
+                    disabled={sending}
+                  />
+                  <button
+                    type="submit"
+                    className={`${styles.sendBtn} ${input.trim() ? styles.sendBtnActive : ''}`}
+                    disabled={!input.trim() || sending}
+                  >
+                    <Icons.Send />
+                  </button>
+                </form>
+              </>
+            ) : (
+              <div className={styles.emptyChat}>
+                <div style={{ fontSize: '56px', marginBottom: '16px' }}>💌</div>
+                <h3>No conversations yet</h3>
+                <p>Accept interest requests to unlock encrypted chat with your matches.</p>
+                <button
+                  style={{
+                    marginTop: '16px', padding: '12px 24px',
+                    background: 'linear-gradient(135deg, #7B1F2E, #c0392b)',
+                    color: '#fff', border: 'none', borderRadius: '12px',
+                    cursor: 'pointer', fontWeight: 600, fontSize: '14px',
+                  }}
+                  onClick={() => { window.location.hash = '#received'; }}
+                >
+                  View Interest Requests →
+                </button>
+              </div>
+            )}
           </section>
         </div>
       </main>
