@@ -528,11 +528,133 @@ function PhotoGallerySection({ account, profile, refreshProfile }) {
   );
 }
 
+// ── Share Modal ───────────────────────────────────────────────────────────────
+function ShareProfileModal({ profileId, displayName, onClose }) {
+  const profileUrl = `${window.location.origin}${window.location.pathname}#profile/${profileId}`;
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(profileUrl).then(() => {
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    });
+  };
+
+  const handleNativeShare = () => {
+    if (navigator.share) {
+      navigator.share({
+        title: `${displayName} — MilanSetu`,
+        text: `Check out ${displayName}'s profile on MilanSetu!`,
+        url: profileUrl,
+      });
+    } else {
+      handleCopy();
+    }
+  };
+
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modalCard} onClick={e => e.stopPropagation()} style={{ maxWidth: '460px' }}>
+        <div className={styles.modalHeader}>
+          <h2 className={styles.modalTitle}>Share Profile</h2>
+          <button className={styles.modalClose} onClick={onClose}><Icons.Close /></button>
+        </div>
+        <div style={{ padding: '8px 0 16px' }}>
+          <p style={{ color: '#666', fontSize: '14px', marginBottom: '16px' }}>
+            Share your profile with family or friends using the link below.
+          </p>
+          <div style={{
+            display: 'flex', gap: '8px', alignItems: 'center',
+            background: '#f8f5f0', borderRadius: '10px', padding: '12px 14px',
+            border: '1.5px solid #e8d9c0',
+          }}>
+            <span style={{ flex: 1, fontSize: '13px', color: '#555', wordBreak: 'break-all' }}>{profileUrl}</span>
+            <button
+              onClick={handleCopy}
+              style={{
+                flexShrink: 0, padding: '6px 14px', borderRadius: '8px',
+                border: 'none', background: copied ? '#4caf50' : '#7B1F2E',
+                color: '#fff', fontSize: '13px', cursor: 'pointer', transition: 'background 0.3s',
+              }}
+            >
+              {copied ? '✓ Copied!' : 'Copy'}
+            </button>
+          </div>
+          <div className={styles.modalActions} style={{ marginTop: '20px' }}>
+            <button type="button" className={styles.cancelBtn} onClick={onClose}>Close</button>
+            <button
+              type="button"
+              className={styles.saveProfileBtn}
+              onClick={handleNativeShare}
+            >
+              <Icons.Share /> Share Now
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ── Request Edit Modal ────────────────────────────────────────────────────────
+function RequestEditModal({ onClose }) {
+  const [submitted, setSubmitted] = useState(false);
+
+  const handleSubmit = () => {
+    setSubmitted(true);
+    setTimeout(() => { setSubmitted(false); onClose(); }, 2000);
+  };
+
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modalCard} onClick={e => e.stopPropagation()} style={{ maxWidth: '460px' }}>
+        <div className={styles.modalHeader}>
+          <h2 className={styles.modalTitle}>Request Profile Edit</h2>
+          <button className={styles.modalClose} onClick={onClose}><Icons.Close /></button>
+        </div>
+        <div style={{ padding: '8px 0 16px' }}>
+          {submitted ? (
+            <div style={{
+              textAlign: 'center', padding: '24px',
+              color: '#4caf50', fontSize: '16px', fontWeight: 600,
+            }}>
+              ✓ Request sent! Admin will review and apply your changes.
+            </div>
+          ) : (
+            <>
+              <div style={{
+                background: '#fff8e6', border: '1px solid #f0c040',
+                borderRadius: '10px', padding: '14px 16px', marginBottom: '16px',
+              }}>
+                <p style={{ margin: 0, fontSize: '14px', color: '#7a5500', lineHeight: '1.6' }}>
+                  <strong>Profile edits require admin approval.</strong><br />
+                  To maintain data integrity and trust, all profile changes are reviewed by our team before being applied.
+                </p>
+              </div>
+              <p style={{ fontSize: '13px', color: '#666', marginBottom: '20px' }}>
+                Click the button below to submit a request. Our team will contact you within 24 hours to process your changes.
+              </p>
+              <div className={styles.modalActions}>
+                <button type="button" className={styles.cancelBtn} onClick={onClose}>Cancel</button>
+                <button type="button" className={styles.saveProfileBtn} onClick={handleSubmit}>
+                  <Icons.Pencil /> Send Edit Request
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Main MyProfilePage ────────────────────────────────────────────────────────
 const MyProfilePage = () => {
   const { user, profile, idealPartner, account, updateProfile, saveIdealPartner, refreshProfile } = useAuth();
   const [editOpen, setEditOpen] = useState(false);
   const [partnerOpen, setPartnerOpen] = useState(false);
+  const [shareOpen, setShareOpen] = useState(false);
+  const [requestEditOpen, setRequestEditOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('overview');
 
   const displayName = profile?.full_name || user?.email || 'Your Profile';
@@ -586,10 +708,12 @@ const MyProfilePage = () => {
                 </div>
               </div>
               <div className={styles.headerActions}>
-                <button className={styles.editBtn} onClick={() => setEditOpen(true)}>
-                  <Icons.Pencil /> Edit Profile
+                <button className={styles.editBtn} onClick={() => setRequestEditOpen(true)}>
+                  <Icons.Pencil /> Request Edit
                 </button>
-                <button className={styles.shareBtn}><Icons.Share /> Share</button>
+                <button className={styles.shareBtn} onClick={() => setShareOpen(true)}>
+                  <Icons.Share /> Share
+                </button>
               </div>
             </div>
           </section>
@@ -797,6 +921,17 @@ const MyProfilePage = () => {
             </div>
           </div>
         </footer>
+
+        {shareOpen && (
+          <ShareProfileModal
+            profileId={profile?.id || user?.id || 'me'}
+            displayName={displayName}
+            onClose={() => setShareOpen(false)}
+          />
+        )}
+        {requestEditOpen && (
+          <RequestEditModal onClose={() => setRequestEditOpen(false)} />
+        )}
       </main>
 
       {/* Edit Modal */}

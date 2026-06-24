@@ -1,7 +1,7 @@
 import React from 'react';
 import styles from '../pages/styles/top_bar.module.css';
-import pro1Img from '../../assets/User_end_assets/pro1.png';
 import AuthenticatedImage from '../../components/AuthenticatedImage';
+import { useAuth } from '../../context/AuthContext';
 
 const Icons = {
   Search: () => (
@@ -26,16 +26,23 @@ const Icons = {
  * Shared TopBar component used across all authenticated pages.
  * Props:
  *   searchPlaceholder - string, optional
- *   userName - string, optional
- *   userRole - string, optional
- *   avatarSrc - img src, optional
+ *   avatarSrc - img src, optional (falls back to profile photo from context)
  */
 const TopBar = ({
   searchPlaceholder = 'Search...',
-  userName = 'Aditya Sharma',
-  userRole = 'Premium Member',
-  avatarSrc = pro1Img,
+  avatarSrc = null,
 }) => {
+  const { profile, user, account } = useAuth();
+
+  const displayName = profile?.full_name || user?.email?.split('@')[0] || 'Member';
+  const membershipTier = account?.user_type
+    ? account.user_type.charAt(0).toUpperCase() + account.user_type.slice(1) + ' Member'
+    : user?.user_type
+      ? user.user_type.charAt(0).toUpperCase() + user.user_type.slice(1) + ' Member'
+      : 'Member';
+
+  const photoSrc = avatarSrc || (profile?.profile_photo_url ?? null);
+
   return (
     <header className={styles.topBar}>
       <div className={styles.searchContainer}>
@@ -57,13 +64,15 @@ const TopBar = ({
         </a>
         <div className={styles.userBlock}>
           <div className={styles.userInfo}>
-            <span className={styles.userName}>{userName}</span>
-            <span className={styles.userRole}>{userRole}</span>
+            <span className={styles.userName}>{displayName}</span>
+            <span className={styles.userRole}>{membershipTier}</span>
           </div>
-          {avatarSrc?.startsWith?.('/api/') ? (
-            <AuthenticatedImage src={avatarSrc} alt={userName} className={styles.avatar} fallbackSrc={pro1Img} />
+          {photoSrc?.startsWith?.('/api/') ? (
+            <AuthenticatedImage src={photoSrc} alt={displayName} className={styles.avatar} />
+          ) : photoSrc ? (
+            <img src={photoSrc} alt={displayName} className={styles.avatar} />
           ) : (
-            <img src={avatarSrc} alt={userName} className={styles.avatar} />
+            <div className={styles.avatarPlaceholder} aria-label={displayName} />
           )}
         </div>
       </div>

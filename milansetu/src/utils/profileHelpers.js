@@ -1,10 +1,4 @@
-import priyaImg from '../assets/User_end_assets/pro.png';
-import arjunImg from '../assets/User_end_assets/pro1.png';
-import ananyaImg from '../assets/User_end_assets/pro2.png';
-import rohanImg from '../assets/User_end_assets/pro3.png';
 import { getAccessToken, isValidJwtFormat } from '../api/auth';
-
-const DEFAULT_AVATARS = [priyaImg, arjunImg, ananyaImg, rohanImg];
 
 const VITE_BASE = import.meta.env.VITE_API_BASE_URL?.trim() ?? '';
 const API_BASE = VITE_BASE ? VITE_BASE.replace(/\/$/, '') : '';
@@ -72,10 +66,10 @@ const PREMIUM_PARTNER_FIELDS = [
 ];
 
 export function getProfileAvatar(profile, account = null) {
+  // Return protected URL when available; otherwise return null so UI
+  // components can render a gender-specific icon instead of static images.
   const apiUrl = profile?.profile_photo_url || account?.profile_photo_url;
-  if (apiUrl) return apiUrl;
-  const index = (profile?.id ?? 0) % DEFAULT_AVATARS.length;
-  return DEFAULT_AVATARS[index];
+  return apiUrl || null;
 }
 
 export function getProfilePhotoUrl(profile, account = null) {

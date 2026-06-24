@@ -3,9 +3,8 @@ import styles from '../styles/notifications_page.module.css';
 import Sidebar from '../../components/Sidebar';
 import TopBar from '../../components/TopBar';
 
-// Assets
-import pro1Img from '../../../assets/User_end_assets/pro1.png';
-import proImg from '../../../assets/User_end_assets/pro.png';
+// dynamic avatars
+import AuthenticatedImage from '../../../components/AuthenticatedImage';
 
 // Icons
 const Icons = {
@@ -61,8 +60,41 @@ const Icons = {
   )
 };
 
+const REC_INTERESTS_KEY = 'ms_received_interests_v1';
+
+function getRelativeTime(iso) {
+  if (!iso) return '';
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
 const NotificationsPage = () => {
   const [activeFilter, setActiveFilter] = useState('All');
+  const [receivedInterests, setReceivedInterests] = useState([]);
+
+  // Load received interests from localStorage / backend events
+  React.useEffect(() => {
+    const load = () => {
+      try {
+        const raw = localStorage.getItem(REC_INTERESTS_KEY);
+        setReceivedInterests(raw ? JSON.parse(raw) : []);
+      } catch { setReceivedInterests([]); }
+    };
+    load();
+    window.addEventListener('storage', load);
+    window.addEventListener('interest:sent', load);
+    return () => {
+      window.removeEventListener('storage', load);
+      window.removeEventListener('interest:sent', load);
+    };
+  }, []);
+
+  const showInterests = activeFilter === 'All' || activeFilter === 'Interests';
 
   return (
     <div className={styles.container}>
@@ -100,76 +132,34 @@ const NotificationsPage = () => {
             {/* Feed List */}
             <div className={styles.feedList}>
               
-              {/* Card 1: Interest */}
-              <div className={styles.notifCard}>
+            {/* Dynamic Interest Notifications from localStorage */}
+            {showInterests && receivedInterests.length > 0 && receivedInterests.map((interest) => (
+              <div key={interest.id} className={styles.notifCard} style={{ borderLeft: '3px solid #c0392b' }}>
                 <div className={`${styles.iconCircle} ${styles.bgPink}`}><Icons.HeartSolid /></div>
                 <div className={styles.notifContent}>
                   <div className={styles.notifHeaderRow}>
-                    <div className={styles.notifTitle}>Ananya Gupta sent you an Interest Request</div>
-                    <div className={styles.timestamp}>10m ago</div>
+                    <div className={styles.notifTitle}>
+                      {interest.name} sent you an Interest Request
+                    </div>
+                    <div className={styles.timestamp}>{getRelativeTime(interest.timestamp)}</div>
                   </div>
                   <div className={styles.notifDesc}>
-                    Ananya (26 Yrs, Software Engineer) matches your preferences by 94%. She would like to connect.
+                    {interest.name}{interest.age ? ` (${interest.age} Yrs` : ''}{interest.role ? `, ${interest.role})` : ')'}  matches your preferences by {interest.match}. They would like to connect.
                   </div>
                   <div className={styles.actionRow}>
-                    <button className={styles.btnPrimary}>Accept Request</button>
-                    <button className={styles.btnOutline}>View Profile</button>
+                    <button className={styles.btnPrimary} onClick={() => { window.location.hash = '#received'; }}>View Request</button>
+                    <button className={styles.btnOutline} onClick={() => { window.location.hash = '#matches'; }}>Browse Profiles</button>
                   </div>
                 </div>
               </div>
+            ))}
 
-              {/* Card 2: Meeting */}
-              <div className={styles.notifCard}>
-                <div className={`${styles.iconCircle} ${styles.bgBlue}`}><Icons.Calendar /></div>
-                <div className={styles.notifContent}>
-                  <div className={styles.notifHeaderRow}>
-                    <div className={styles.notifTitle}>Upcoming Virtual Introduction</div>
-                    <div className={styles.timestamp}>2h ago</div>
-                  </div>
-                  <div className={styles.notifDesc}>
-                    Your video call with Priya Sharma is scheduled to begin in 30 minutes. Please ensure you have a stable connection.
-                  </div>
-                  <div className={styles.actionRow}>
-                    <button className={styles.btnGoldFilled}><Icons.Video /> Join Call</button>
-                    <button className={styles.btnOutline}>Reschedule</button>
-                  </div>
-                </div>
+            {/* Empty state when no dynamic notifications */}
+            {receivedInterests.length === 0 && showInterests && (
+              <div style={{ padding: '40px 20px', textAlign: 'center', color: '#999' }}>
+                No interest notifications yet.
               </div>
-
-              {/* Card 3: Premium Match (Highlighted) */}
-              <div className={`${styles.notifCard} ${styles.premiumHighlight}`}>
-                <div className={`${styles.iconCircle} ${styles.bgCream}`}><Icons.Sparkle /></div>
-                <div className={styles.notifContent}>
-                  <div className={styles.notifHeaderRow}>
-                    <div className={styles.notifTitle}>New Premium Match Discovered</div>
-                    <div className={styles.timestamp}>5h ago</div>
-                  </div>
-                  <div className={styles.notifDesc}>
-                    We found a highly compatible profile for you. Ishita Verma shares your core values and professional background.
-                  </div>
-                  <div className={styles.actionRow}>
-                    <button className={styles.btnPrimary}>Show Interest</button>
-                    <button className={styles.btnOutline}>Compare Profiles</button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Card 4: System / Profile */}
-              <div className={styles.notifCard}>
-                <div className={`${styles.iconCircle} ${styles.bgGreen}`}><Icons.ShieldCheck /></div>
-                <div className={styles.notifContent}>
-                  <div className={styles.notifHeaderRow}>
-                    <div className={styles.notifTitle}>Profile Verification Successful</div>
-                    <div className={styles.timestamp}>Yesterday</div>
-                  </div>
-                  <div className={styles.notifDesc}>
-                    Your educational and professional documents have been verified by our team. Your profile now features the Verified Badge.
-                  </div>
-                  <div className={styles.actionRow}>
-                    <button className={styles.btnFlatGray}>View Badge</button>
-                  </div>
-                </div>
-              </div>
+            )}
 
             </div>
           </div>
@@ -183,7 +173,7 @@ const NotificationsPage = () => {
                 <Icons.ShieldCheck />
                 <span className={styles.secLabel}>SECURITY STATUS</span>
               </div>
-              <h2 className={styles.secScoreHeading}>92% Profile Trust Score</h2>
+              <h2 className={styles.secScoreHeading}>Profile Trust Score</h2>
               
               <div className={styles.progressBarTrack}>
                 <div className={styles.progressBarFill}></div>
@@ -194,53 +184,6 @@ const NotificationsPage = () => {
               </p>
               
               <button className={styles.secBtn}>Complete Verification</button>
-            </div>
-
-            {/* Recent Activity Card */}
-            <div className={styles.activityCard}>
-              <h3 className={styles.activityHeading}>Recent Activity</h3>
-              
-              <div className={styles.activityList}>
-                <div className={styles.activityItem}>
-                  <div className={styles.bulletDot}></div>
-                  <div>
-                    <div className={styles.actTitle}>Profile Viewed</div>
-                    <div className={styles.actSub}>Kavita and 4 others viewed you</div>
-                  </div>
-                </div>
-                
-                <div className={styles.activityItem}>
-                  <div className={styles.bulletDot}></div>
-                  <div>
-                    <div className={styles.actTitle}>Preference Updated</div>
-                    <div className={styles.actSub}>Changed location criteria</div>
-                  </div>
-                </div>
-                
-                <div className={styles.activityItem}>
-                  <div className={styles.bulletDot}></div>
-                  <div>
-                    <div className={styles.actTitle}>Photo Gallery</div>
-                    <div className={styles.actSub}>Added 2 new recent photos</div>
-                  </div>
-                </div>
-              </div>
-              
-              <a href="#notifications" className={styles.viewAllLink}>View Full History</a>
-            </div>
-
-            {/* Spotlight Match Card */}
-            <div className={styles.spotlightCard}>
-              <img src={proImg} alt="Sneha Kapoor" className={styles.spotlightImg} />
-              <div className={styles.spotlightOverlay}>
-                <span className={styles.spotLabel}>SPOTLIGHT MATCH</span>
-                <h3 className={styles.spotName}>Sneha Kapoor</h3>
-                <span className={styles.spotSub}>Architect • New Delhi</span>
-                <span className={styles.spotScore}>96% COMPATIBLE</span>
-              </div>
-              <button className={styles.spotlightBtn}>
-                <Icons.ArrowRight />
-              </button>
             </div>
 
           </div>

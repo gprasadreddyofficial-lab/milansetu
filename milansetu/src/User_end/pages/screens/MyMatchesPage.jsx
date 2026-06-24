@@ -1,13 +1,67 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import styles from '../styles/my_matches_page.module.css';
 import Sidebar from '../../components/Sidebar';
 import TopBar from '../../components/TopBar';
+import AuthenticatedImage from '../../../components/AuthenticatedImage';
+import { useAuth } from '../../../context/AuthContext';
+import { fetchProfiles, fetchSentInterestStats, sendInterest } from '../../../api/auth';
+import { getMatchScore, getProfileAvatar } from '../../../utils/profileHelpers';
 
-// Assets
-import proImg from '../../../assets/User_end_assets/pro.png';
-import pro1Img from '../../../assets/User_end_assets/pro1.png';
-import pro2Img from '../../../assets/User_end_assets/pro2.png';
-import pro3Img from '../../../assets/User_end_assets/pro3.png';
+const PROFILE_VIEWS_KEY = 'ms_profile_views_v1';
+const RECEIVED_INTERESTS_KEY = 'ms_received_interests_v1';
+
+function getRelativeTime(iso) {
+  if (!iso) return '';
+  const diff = Date.now() - new Date(iso).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  return `${Math.floor(hrs / 24)}d ago`;
+}
+
+function trackProfileView(match) {
+  try {
+    const raw = localStorage.getItem(PROFILE_VIEWS_KEY);
+    const views = raw ? JSON.parse(raw) : [];
+    const filtered = views.filter(v => v.viewedId !== match.id);
+    filtered.unshift({
+      viewedId: match.id,
+      name: match.full_name || 'Member',
+      avatar: match.img || getProfileAvatar(match),
+      role: match.current_designation || match.education || '',
+      loc: match.birth_place || '',
+      timestamp: new Date().toISOString(),
+    });
+    localStorage.setItem(PROFILE_VIEWS_KEY, JSON.stringify(filtered.slice(0, 20)));
+  } catch {}
+}
+
+function simulateReceivedInterest(match, fromUser) {
+  try {
+    const raw = localStorage.getItem(RECEIVED_INTERESTS_KEY);
+    const interests = raw ? JSON.parse(raw) : [];
+    const exists = interests.some(i => i.senderId === (fromUser?.id || 'me') && i.receiverId === match.id);
+    if (exists) return;
+    interests.unshift({
+      id: Date.now(),
+      senderId: fromUser?.id || 'me',
+      receiverId: match.id,
+      name: fromUser?.full_name || fromUser?.email || 'Someone',
+      age: fromUser?.age || '',
+      height: fromUser?.height_cm ? `${fromUser.height_cm} cm` : '',
+      role: fromUser?.current_designation || fromUser?.education || 'Professional',
+      match: `${match.matchScore || 0}%`,
+      premium: false,
+      tags: [fromUser?.religion || 'Match'].filter(Boolean),
+      message: 'I am interested in connecting with you.',
+      status: 'pending',
+      timestamp: new Date().toISOString(),
+    });
+    localStorage.setItem(RECEIVED_INTERESTS_KEY, JSON.stringify(interests));
+  } catch {}
+}
 
 // Icons
 const Icons = {
@@ -61,19 +115,220 @@ const Icons = {
       <line x1="18" y1="16" x2="22" y2="16" />
     </svg>
   ),
+  Eye: () => (
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" /><circle cx="12" cy="12" r="3" />
+    </svg>
+  ),
+  ChevronLeft: () => (
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5">
+      <polyline points="15 18 9 12 15 6" />
+    </svg>
+  ),
+  ChevronRight: () => (
+    <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2.5">
+      <polyline points="9 18 15 12 9 6" />
+    </svg>
+  ),
 };
 
+// ── Send Interest Confirmation Popup ─────────────────────────────────────────
+function InterestConfirmPopup({ match, onConfirm, onCancel }) {
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 1000,
+      background: 'rgba(0,0,0,0.55)', display: 'flex',
+      alignItems: 'center', justifyContent: 'center',
+      backdropFilter: 'blur(4px)',
+    }} onClick={onCancel}>
+      <div style={{
+        background: '#fff', borderRadius: '20px', padding: '36px 28px',
+        maxWidth: '420px', width: '90%', boxShadow: '0 24px 70px rgba(0,0,0,0.3)',
+        textAlign: 'center', animation: 'popIn 0.25s ease',
+      }} onClick={e => e.stopPropagation()}>
+        <div style={{
+          width: '72px', height: '72px', borderRadius: '50%',
+          background: 'linear-gradient(135deg, #7B1F2E, #c0392b)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          margin: '0 auto 18px', fontSize: '32px',
+        }}>💌</div>
+        <h3 style={{ margin: '0 0 8px', fontSize: '22px', color: '#1a1a1a', fontWeight: 700 }}>
+          Send Interest?
+        </h3>
+        <p style={{ color: '#666', fontSize: '14px', marginBottom: '8px' }}>
+          You are about to send an interest request to
+        </p>
+        <p style={{ color: '#7B1F2E', fontWeight: 700, fontSize: '18px', marginBottom: '4px' }}>
+          {match.full_name || 'this member'}
+        </p>
+        {match.matchScore > 0 && (
+          <p style={{ color: '#888', fontSize: '13px', marginBottom: '24px' }}>
+            ✨ {match.matchScore}% Compatibility Match
+          </p>
+        )}
+        <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+          <button
+            onClick={onCancel}
+            style={{
+              padding: '11px 26px', borderRadius: '12px',
+              border: '1.5px solid #ddd', background: '#fff',
+              color: '#555', fontSize: '14px', cursor: 'pointer', fontWeight: 600,
+              transition: 'border-color 0.2s',
+            }}
+          >Cancel</button>
+          <button
+            onClick={onConfirm}
+            style={{
+              padding: '11px 26px', borderRadius: '12px',
+              border: 'none', background: 'linear-gradient(135deg, #7B1F2E, #c0392b)',
+              color: '#fff', fontSize: '14px', cursor: 'pointer',
+              fontWeight: 700, boxShadow: '0 4px 18px rgba(123,31,46,0.4)',
+              transition: 'transform 0.15s',
+            }}
+          >✓ Confirm & Send</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 const MyMatchesPage = () => {
+  const { user, profile, idealPartner } = useAuth();
   const [activeTab, setActiveTab] = useState('Highly Recommended');
+  const [matches, setMatches] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [sentStats, setSentStats] = useState({});
+  const [sendingId, setSendingId] = useState(null);
+  const [interestSent, setInterestSent] = useState({});
+  const [confirmMatch, setConfirmMatch] = useState(null);
+  const [featuredIndex, setFeaturedIndex] = useState(0);
+  const [recentViews, setRecentViews] = useState([]);
+
+  // Swipe state
+  const [swipeX, setSwipeX] = useState(0);
+  const [swiping, setSwiping] = useState(false);
+  const [swipeStart, setSwipeStart] = useState(null);
+  const [swipeDirection, setSwipeDirection] = useState(null); // 'left'|'right'|null
+  const swipeRef = useRef(null);
+
+  // Load matches from API
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    fetchProfiles().then(({ data }) => {
+      if (!active) return;
+      const profiles = Array.isArray(data) ? data : [];
+      const scored = profiles.map(p => ({
+        ...p,
+        matchScore: p.match_score || getMatchScore(p, idealPartner, profile),
+        img: getProfileAvatar(p),
+      })).sort((a, b) => b.matchScore - a.matchScore);
+      setMatches(scored);
+      setLoading(false);
+    });
+    fetchSentInterestStats().then(({ data }) => {
+      if (!active || !data) return;
+      setSentStats(data);
+    });
+    return () => { active = false; };
+  }, []);
+
+  // Load recent views from localStorage
+  useEffect(() => {
+    const loadViews = () => {
+      try {
+        const raw = localStorage.getItem(PROFILE_VIEWS_KEY);
+        setRecentViews(raw ? JSON.parse(raw) : []);
+      } catch { setRecentViews([]); }
+    };
+    loadViews();
+    // Refresh when storage changes (e.g., from dashboard tab)
+    window.addEventListener('storage', loadViews);
+    return () => window.removeEventListener('storage', loadViews);
+  }, []);
+
+  const topPicks = useMemo(() => matches.slice(0, 10), [matches]);
+  const featuredMatch = topPicks[featuredIndex] || null;
+
+  const handleViewProfile = (match) => {
+    trackProfileView(match);
+    setRecentViews(prev => {
+      const filtered = prev.filter(v => v.viewedId !== match.id);
+      const entry = {
+        viewedId: match.id,
+        name: match.full_name || 'Member',
+        avatar: match.img,
+        role: match.current_designation || match.education || '',
+        loc: match.birth_place || '',
+        timestamp: new Date().toISOString(),
+      };
+      return [entry, ...filtered].slice(0, 20);
+    });
+    window.location.hash = `#profile/${match.id}`;
+  };
+
+  const handleConfirmInterest = async () => {
+    if (!confirmMatch) return;
+    const match = confirmMatch;
+    setConfirmMatch(null);
+    setSendingId(match.id);
+    await sendInterest(match.id);
+    // Notify ReceivedInterestsPage and NotificationsPage to reload
+    window.dispatchEvent(new CustomEvent('interest:sent', { detail: { matchId: match.id } }));
+    const { data } = await fetchSentInterestStats();
+    if (data) setSentStats(data);
+    setSendingId(null);
+    setInterestSent(prev => ({ ...prev, [match.id]: true }));
+  };
+
+  // ── Swipe handlers ────────────────────────────────────────────────────────
+  const SWIPE_THRESHOLD = 80;
+
+  const onSwipeStart = (clientX) => {
+    setSwiping(true);
+    setSwipeStart(clientX);
+    setSwipeX(0);
+    setSwipeDirection(null);
+  };
+
+  const onSwipeMove = (clientX) => {
+    if (!swiping) return;
+    const dx = clientX - swipeStart;
+    setSwipeX(dx);
+    if (dx > 30) setSwipeDirection('right');
+    else if (dx < -30) setSwipeDirection('left');
+    else setSwipeDirection(null);
+  };
+
+  const onSwipeEnd = () => {
+    if (!swiping) return;
+    setSwiping(false);
+    if (swipeX > SWIPE_THRESHOLD && featuredMatch) {
+      // Swipe right → Send Interest
+      setConfirmMatch(featuredMatch);
+    } else if (swipeX < -SWIPE_THRESHOLD) {
+      // Swipe left → next profile
+      setFeaturedIndex(i => (i + 1) % Math.max(1, topPicks.length));
+    }
+    setSwipeX(0);
+    setSwipeDirection(null);
+  };
+
+  // Mouse events
+  const handleMouseDown = (e) => onSwipeStart(e.clientX);
+  const handleMouseMove = (e) => { if (swiping) onSwipeMove(e.clientX); };
+  const handleMouseUp = () => onSwipeEnd();
+
+  // Touch events
+  const handleTouchStart = (e) => onSwipeStart(e.touches[0].clientX);
+  const handleTouchMove = (e) => onSwipeMove(e.touches[0].clientX);
+  const handleTouchEnd = () => onSwipeEnd();
 
   return (
     <div className={styles.container}>
-      {/* Sidebar */}
       <Sidebar activePage="matches" />
 
-      {/* Main Content */}
       <main className={styles.mainContent}>
-        {/* Top Bar */}
         <TopBar searchPlaceholder="Search matches..." />
 
         <div className={styles.pageBody}>
@@ -90,37 +345,161 @@ const MyMatchesPage = () => {
             </div>
           </section>
 
-          {/* Featured Match */}
-          <section className={styles.featuredCard}>
-            <img src={pro2Img} alt="Ananya Sharma" className={styles.featuredPhoto} />
-            <div className={styles.featuredContent}>
-              <div className={styles.compatibilityBadge}>
-                <span className={styles.scoreValue}>98%</span>
-                <span className={styles.scoreLabel}>COMPATIBILITY SCORE</span>
-              </div>
-              <div className={styles.perfectMatchBadge}>
-                <Icons.Sparkle /> Perfect Match
-              </div>
-              <h2 className={styles.featuredName}>Ananya Sharma, 28</h2>
-              <p className={styles.featuredSub}>Software Architect at Google • MBA, Stanford University</p>
-              
-              <div className={styles.chipRow}>
-                <div className={styles.infoChip}>
-                  <div className={styles.chipLabel}>VALUES</div>
-                  <div className={styles.chipValue}>Traditional yet Modern</div>
+          {/* Featured Match — Swipeable */}
+          {loading ? (
+            <section className={styles.featuredCard} style={{ padding: '40px', textAlign: 'center', color: '#999' }}>
+              <p>Loading matches…</p>
+            </section>
+          ) : featuredMatch ? (
+            <section
+              ref={swipeRef}
+              className={styles.featuredCard}
+              style={{
+                transform: swiping ? `translateX(${swipeX * 0.4}px) rotate(${swipeX * 0.02}deg)` : 'none',
+                transition: swiping ? 'none' : 'transform 0.35s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+                cursor: swiping ? 'grabbing' : 'grab',
+                userSelect: 'none',
+                position: 'relative',
+                overflow: 'hidden',
+              }}
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+            >
+              {/* Swipe direction overlay */}
+              {swipeDirection === 'right' && (
+                <div style={{
+                  position: 'absolute', inset: 0, zIndex: 10,
+                  background: 'rgba(34, 197, 94, 0.25)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'flex-start',
+                  paddingLeft: '24px', pointerEvents: 'none',
+                  borderRadius: 'inherit',
+                }}>
+                  <span style={{
+                    fontSize: '32px', fontWeight: 800, color: '#16a34a',
+                    border: '3px solid #16a34a', borderRadius: '12px',
+                    padding: '4px 14px', background: 'rgba(255,255,255,0.85)',
+                  }}>💌 INTEREST</span>
                 </div>
-                <div className={styles.infoChip}>
-                  <div className={styles.chipLabel}>LOCATION</div>
-                  <div className={styles.chipValue}>Mumbai / New York</div>
+              )}
+              {swipeDirection === 'left' && (
+                <div style={{
+                  position: 'absolute', inset: 0, zIndex: 10,
+                  background: 'rgba(239, 68, 68, 0.25)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'flex-end',
+                  paddingRight: '24px', pointerEvents: 'none',
+                  borderRadius: 'inherit',
+                }}>
+                  <span style={{
+                    fontSize: '32px', fontWeight: 800, color: '#dc2626',
+                    border: '3px solid #dc2626', borderRadius: '12px',
+                    padding: '4px 14px', background: 'rgba(255,255,255,0.85)',
+                  }}>SKIP ⏭</span>
+                </div>
+              )}
+
+              <AuthenticatedImage
+                src={featuredMatch.img}
+                profile={featuredMatch}
+                alt={featuredMatch.full_name || ''}
+                className={styles.featuredPhoto}
+              />
+              <div className={styles.featuredContent}>
+                <div className={styles.compatibilityBadge}>
+                  <span className={styles.scoreValue}>{featuredMatch.matchScore}%</span>
+                  <span className={styles.scoreLabel}>COMPATIBILITY SCORE</span>
+                </div>
+                <div className={styles.perfectMatchBadge}>
+                  <Icons.Sparkle /> Perfect Match
+                </div>
+                <h2 className={styles.featuredName}>
+                  {featuredMatch.full_name || 'Member'}{featuredMatch.age ? `, ${featuredMatch.age}` : ''}
+                </h2>
+                <p className={styles.featuredSub}>
+                  {featuredMatch.current_designation || featuredMatch.education || 'Professional'}
+                  {featuredMatch.current_company ? ` at ${featuredMatch.current_company}` : ''}
+                  {featuredMatch.birth_place ? ` • ${featuredMatch.birth_place}` : ''}
+                </p>
+
+                <div className={styles.chipRow}>
+                  <div className={styles.infoChip}>
+                    <div className={styles.chipLabel}>VALUES</div>
+                    <div className={styles.chipValue}>{featuredMatch.family_values || 'Traditional'}</div>
+                  </div>
+                  <div className={styles.infoChip}>
+                    <div className={styles.chipLabel}>LOCATION</div>
+                    <div className={styles.chipValue}>{featuredMatch.birth_place || 'India'}</div>
+                  </div>
+                </div>
+
+                {/* Swipe hint */}
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: '12px',
+                  margin: '10px 0 6px', opacity: 0.7, fontSize: '12px', color: '#ccc',
+                }}>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    <Icons.ChevronLeft /> Skip
+                  </span>
+                  <span style={{ flex: 1, textAlign: 'center' }}>← Swipe →</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                    Interest <Icons.ChevronRight />
+                  </span>
+                </div>
+
+                <div className={styles.featuredActions}>
+                  <button
+                    className={styles.outlineBtn}
+                    onClick={() => handleViewProfile(featuredMatch)}
+                  >
+                    View Full Profile
+                  </button>
+                  <button
+                    className={styles.filledBtn}
+                    onClick={() => setConfirmMatch(featuredMatch)}
+                    disabled={interestSent[featuredMatch.id] || sendingId === featuredMatch.id}
+                  >
+                    {interestSent[featuredMatch.id] ? '✓ Sent' : 'Send Interest'}
+                  </button>
                 </div>
               </div>
 
-              <div className={styles.featuredActions}>
-                <button className={styles.outlineBtn}>View Full Profile</button>
-                <button className={styles.filledBtn}>Send Interest</button>
-              </div>
-            </div>
-          </section>
+              {/* Navigation arrows */}
+              {topPicks.length > 1 && (
+                <>
+                  <button
+                    onClick={() => setFeaturedIndex(i => (i - 1 + topPicks.length) % topPicks.length)}
+                    style={{
+                      position: 'absolute', left: '12px', top: '50%',
+                      transform: 'translateY(-50%)', zIndex: 20,
+                      background: 'rgba(255,255,255,0.2)', border: 'none',
+                      borderRadius: '50%', width: '40px', height: '40px',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      cursor: 'pointer', backdropFilter: 'blur(4px)', color: '#fff',
+                    }}
+                  ><Icons.ChevronLeft /></button>
+                  <button
+                    onClick={() => setFeaturedIndex(i => (i + 1) % topPicks.length)}
+                    style={{
+                      position: 'absolute', right: '12px', top: '50%',
+                      transform: 'translateY(-50%)', zIndex: 20,
+                      background: 'rgba(255,255,255,0.2)', border: 'none',
+                      borderRadius: '50%', width: '40px', height: '40px',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      cursor: 'pointer', backdropFilter: 'blur(4px)', color: '#fff',
+                    }}
+                  ><Icons.ChevronRight /></button>
+                </>
+              )}
+            </section>
+          ) : (
+            <section className={styles.featuredCard} style={{ padding: '40px', textAlign: 'center', color: '#999' }}>
+              <p>No featured matches available yet. Browse profiles to get started!</p>
+            </section>
+          )}
 
           {/* Grid Layout */}
           <div className={styles.contentGrid}>
@@ -129,8 +508,8 @@ const MyMatchesPage = () => {
               <div className={styles.filterBar}>
                 <div className={styles.tabs}>
                   {['Highly Recommended', 'New Matches', 'Online Now'].map(tab => (
-                    <div 
-                      key={tab} 
+                    <div
+                      key={tab}
                       className={`${styles.tab} ${activeTab === tab ? styles.activeTab : ''}`}
                       onClick={() => setActiveTab(tab)}
                     >
@@ -154,58 +533,80 @@ const MyMatchesPage = () => {
 
               {/* Match Count */}
               <div className={styles.matchCount}>
-                Showing <strong>3</strong> matches for <strong>{activeTab}</strong>
+                Showing <strong>{matches.length}</strong> matches for <strong>{activeTab}</strong>
               </div>
 
               {/* Match Grid */}
               <div className={styles.matchGrid}>
-                {[
-                  { name: 'Riya Kapoor', age: 27, role: 'Product Designer', loc: 'Bengaluru', match: '96%', tags: ['Arts Graduate', 'Hindu, Brahmin'], img: pro3Img, online: true },
-                  { name: 'Kavita Iyer', age: 26, role: 'Data Scientist', loc: 'Hyderabad', match: '94%', tags: ['MS, IIT Delhi', 'Vegetarian'], img: proImg, online: false },
-                  { name: 'Priya Mehta', age: 28, role: 'Surgeon', loc: 'London', match: '92%', tags: ['MBBS, London', 'NRI Status'], img: pro1Img, online: true }
-                ].map((match, i) => (
-                  <div key={i} className={styles.matchCard}>
-                    <div className={styles.cardImageWrapper}>
-                      <img src={match.img} alt={match.name} className={styles.cardImage} />
-                      {/* Gradient overlay */}
-                      <div className={styles.imageGradient}></div>
-
-                      {/* Top badges */}
-                      <div className={styles.verifiedBadge}>
-                        <span className={styles.checkIcon}><Icons.Check /></span> VERIFIED
-                      </div>
-                      <div className={styles.matchPercentBadge}>{match.match}</div>
-
-                      {/* Online indicator */}
-                      {match.online && (
-                        <div className={styles.onlinePill}>
-                          <span className={styles.onlineDot}></span> Online
-                        </div>
-                      )}
-
-                      {/* Bottom overlay actions (on hover) */}
-                      <div className={styles.imageOverlayActions}>
-                        <button className={styles.overlayBtn} title="Send Interest">♡</button>
-                        <a href="#messages" className={styles.overlayBtn} title="Message">💬</a>
-                      </div>
-                    </div>
-                    <div className={styles.cardBody}>
-                      <div className={styles.cardTopRow}>
-                        <h3 className={styles.matchNameAge}>{match.name}, {match.age}</h3>
-                      </div>
-                      <p className={styles.matchSubtitle}>
-                        <span className={styles.roleIcon}>💼</span> {match.role} • {match.loc}
-                      </p>
-                      <div className={styles.tagRow}>
-                        {match.tags.map(tag => <span key={tag} className={styles.tag}>{tag}</span>)}
-                      </div>
-                      <div className={styles.cardActions}>
-                        <button className={styles.smallOutlineBtn}>View Profile</button>
-                        <button className={styles.smallFilledBtn}>Send Interest</button>
-                      </div>
-                    </div>
+                {loading ? (
+                  <div style={{ gridColumn: '1 / -1', padding: '40px 20px', textAlign: 'center', color: '#888' }}>
+                    <p>Loading matches…</p>
                   </div>
-                ))}
+                ) : matches.length === 0 ? (
+                  <div style={{ gridColumn: '1 / -1', padding: '40px 20px', textAlign: 'center', color: '#888' }}>
+                    <p>No matches available yet. Check back soon!</p>
+                  </div>
+                ) : (
+                  matches.map((match) => (
+                    <div key={match.id} className={styles.matchCard}>
+                      <div className={styles.cardImageWrapper}>
+                        <AuthenticatedImage
+                          src={match.img}
+                          profile={match}
+                          alt={match.full_name || 'Member'}
+                          className={styles.cardImage}
+                        />
+                        <div className={styles.imageGradient}></div>
+                        <div className={styles.verifiedBadge}>
+                          <span className={styles.checkIcon}><Icons.Check /></span> VERIFIED
+                        </div>
+                        <div className={styles.matchPercentBadge}>{match.matchScore}%</div>
+                        <div className={styles.imageOverlayActions}>
+                          <button
+                            className={styles.overlayBtn}
+                            title="Send Interest"
+                            onClick={() => setConfirmMatch(match)}
+                          >♡</button>
+                          <button
+                            className={styles.overlayBtn}
+                            title="View Profile"
+                            onClick={() => handleViewProfile(match)}
+                          ><Icons.Eye /></button>
+                        </div>
+                      </div>
+                      <div className={styles.cardBody}>
+                        <div className={styles.cardTopRow}>
+                          <h3 className={styles.matchNameAge}>
+                            {match.full_name || 'Member'}{match.age ? `, ${match.age}` : ''}
+                          </h3>
+                        </div>
+                        <p className={styles.matchSubtitle}>
+                          <span className={styles.roleIcon}>💼</span>{' '}
+                          {match.current_designation || match.education || 'Professional'}
+                          {match.birth_place ? ` • ${match.birth_place}` : ''}
+                        </p>
+                        <div className={styles.tagRow}>
+                          {[match.religion, match.family_values, match.industry].filter(Boolean).slice(0, 2).map(tag => (
+                            <span key={tag} className={styles.tag}>{tag}</span>
+                          ))}
+                        </div>
+                        <div className={styles.cardActions}>
+                          <button
+                            className={styles.smallOutlineBtn}
+                            onClick={() => handleViewProfile(match)}
+                          >View Profile</button>
+                          <button
+                            className={styles.smallFilledBtn}
+                            onClick={() => setConfirmMatch(match)}
+                            disabled={interestSent[match.id] || sendingId === match.id}
+                          >
+                            {interestSent[match.id] ? '✓ Sent' : 'Send Interest'}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
 
@@ -218,7 +619,7 @@ const MyMatchesPage = () => {
                 </div>
                 <div className={styles.metricsList}>
                   {[
-                    { label: 'Lifestyle Compatibility', value: '92%' },
+                    { label: 'Lifestyle Compatibility', value: sentStats.response_rate ? `${Math.min(100, sentStats.response_rate + 62)}%` : '92%' },
                     { label: 'Values & Ethics', value: '88%' },
                     { label: 'Career Trajectory', value: '95%' }
                   ].map(metric => (
@@ -245,19 +646,31 @@ const MyMatchesPage = () => {
                   <h3 className={styles.cardTitle}>RECENT VIEWS</h3>
                 </div>
                 <div className={styles.recentViewsList}>
-                  {[
-                    { name: 'Pooja Verma', time: '2h ago', img: pro2Img },
-                    { name: 'Kritika Malhotara', time: '5h ago', img: pro3Img }
-                  ].map((view, i) => (
-                    <div key={i} className={styles.recentItem}>
-                      <img src={view.img} alt={view.name} className={styles.recentAvatar} />
-                      <div className={styles.recentInfo}>
-                        <div className={styles.recentName}>{view.name}</div>
-                        <div className={styles.recentAction}>Viewed your profile</div>
-                      </div>
-                      <div className={styles.recentTime}>{view.time}</div>
+                  {recentViews.length === 0 ? (
+                    <div style={{ padding: '20px', textAlign: 'center', color: '#999' }}>
+                      <p>No recent views yet.<br />Browse profiles to see them here.</p>
                     </div>
-                  ))}
+                  ) : (
+                    recentViews.slice(0, 5).map((view, i) => (
+                      <div
+                        key={i}
+                        className={styles.recentItem}
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => { window.location.hash = `#profile/${view.viewedId}`; }}
+                      >
+                        <AuthenticatedImage
+                          src={view.avatar}
+                          alt={view.name}
+                          className={styles.recentAvatar}
+                        />
+                        <div className={styles.recentInfo}>
+                          <div className={styles.recentName}>{view.name}</div>
+                          <div className={styles.recentAction}>Viewed your profile</div>
+                        </div>
+                        <div className={styles.recentTime}>{getRelativeTime(view.timestamp)}</div>
+                      </div>
+                    ))
+                  )}
                 </div>
                 <div className={styles.decorativeIcons}>
                   <div className={styles.sparkleIcon}><Icons.Sparkle /></div>
@@ -268,6 +681,15 @@ const MyMatchesPage = () => {
           </div>
         </div>
       </main>
+
+      {/* Send Interest Confirmation Popup */}
+      {confirmMatch && (
+        <InterestConfirmPopup
+          match={confirmMatch}
+          onConfirm={handleConfirmInterest}
+          onCancel={() => setConfirmMatch(null)}
+        />
+      )}
     </div>
   );
 };
