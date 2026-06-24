@@ -260,6 +260,12 @@ export async function fetchProfileById(id) {
   return request(`/milansetu/profiles/${id}/`);
 }
 
+// ── Received interests ────────────────────────────────────────────────────────
+
+export async function fetchReceivedInterests() {
+  return request('/milansetu/interests/received/');
+}
+
 // ── Sent interests ────────────────────────────────────────────────────────────
 
 export async function fetchSentInterests() {

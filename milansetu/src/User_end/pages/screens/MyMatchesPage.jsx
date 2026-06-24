@@ -273,7 +273,8 @@ const MyMatchesPage = () => {
     setConfirmMatch(null);
     setSendingId(match.id);
     await sendInterest(match.id);
-    simulateReceivedInterest(match, profile || user);
+    // Notify ReceivedInterestsPage and NotificationsPage to reload
+    window.dispatchEvent(new CustomEvent('interest:sent', { detail: { matchId: match.id } }));
     const { data } = await fetchSentInterestStats();
     if (data) setSentStats(data);
     setSendingId(null);

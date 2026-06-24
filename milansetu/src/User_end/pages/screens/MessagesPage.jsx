@@ -161,7 +161,7 @@ const MessagesPage = () => {
           name: p.full_name || item.other_user_email,
           role: p.current_designation || p.education || 'Member',
           match: `${item.match_score}%`,
-          avatarUrl: null, // loaded by AuthenticatedImage
+          avatarUrl: p.profile_photo_url || null,
           profileData: p,
           online: false,
           status: 'accepted',
@@ -182,17 +182,29 @@ const MessagesPage = () => {
   useEffect(() => {
     if (!myUid) return;
 
-    // Try to init Firebase (will gracefully fail if not configured)
     const checkFirebase = async () => {
       try {
-        // Check if firebase modules loaded correctly by testing db object
         const { db } = await import('../../../firebase/firebaseChat');
-        if (db !== undefined) {
+        const { doc, getDoc } = await import('firebase/firestore');
+        await getDoc(doc(db, '_ping', 'test'));
+        setFirebaseReady(true);
+        initFCM().catch(() => {});
+      } catch (err) {
+        const code = err?.code || '';
+        // permission-denied means Firestore IS reachable — just rules block us
+        // unavailable / failed-precondition = not set up yet
+        if (
+          code === 'permission-denied' ||
+          code === 'unauthenticated' ||
+          code.includes('not-found')
+        ) {
+          // Firestore exists and responded — treat as ready
           setFirebaseReady(true);
           initFCM().catch(() => {});
+        } else {
+          console.warn('[Firebase] Firestore not reachable:', code, err?.message);
+          setFirebaseReady(false);
         }
-      } catch {
-        setFirebaseReady(false);
       }
     };
     checkFirebase();
@@ -470,19 +482,29 @@ const MessagesPage = () => {
                   </div>
                 </div>
 
-                {/* Firebase not configured banner */}
+                {/* Firestore not reachable banner */}
                 {!firebaseReady && (
                   <div style={{
                     background: '#fff8e6', border: '1px solid #f0c040',
                     padding: '10px 20px', fontSize: '13px', color: '#7a5500',
                     display: 'flex', alignItems: 'center', gap: '8px',
+                    flexWrap: 'wrap',
                   }}>
-                    ⚠️ <strong>Firebase not configured yet.</strong>
-                    Messages are saved locally. Add your Firebase credentials in{' '}
-                    <code style={{ background: '#ffe', padding: '1px 4px', borderRadius: '4px' }}>
-                      src/firebase/firebase.js
-                    </code>{' '}
-                    to enable real-time encrypted chat.
+                    ⚠️ <strong>Firestore not reachable.</strong>
+                    Go to{' '}
+                    <a
+                      href="https://console.firebase.google.com/project/milansetu/firestore/rules"
+                      target="_blank"
+                      rel="noreferrer"
+                      style={{ color: '#7B1F2E', fontWeight: 700, textDecoration: 'underline' }}
+                    >
+                      Firebase Console → Firestore Rules
+                    </a>
+                    {' '}and change the rule to:{' '}
+                    <code style={{ background: '#ffe', padding: '2px 6px', borderRadius: '4px', fontSize: '12px' }}>
+                      allow read, write: if true;
+                    </code>
+                    {' '}(dev mode — no Firebase Auth needed)
                   </div>
                 )}
 

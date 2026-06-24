@@ -11,23 +11,23 @@ import { getMessaging, isSupported } from 'firebase/messaging';
 
 // ── PASTE YOUR FIREBASE CONFIG HERE ──────────────────────────────────────────
 const firebaseConfig = {
-  apiKey:            "REPLACE_WITH_YOUR_API_KEY",
-  authDomain:        "REPLACE_WITH_YOUR_AUTH_DOMAIN",
-  projectId:         "REPLACE_WITH_YOUR_PROJECT_ID",
-  storageBucket:     "REPLACE_WITH_YOUR_STORAGE_BUCKET",
-  messagingSenderId: "REPLACE_WITH_YOUR_MESSAGING_SENDER_ID",
-  appId:             "REPLACE_WITH_YOUR_APP_ID",
-  // measurementId: "REPLACE_IF_ANALYTICS_ENABLED",
+  apiKey:            "AIzaSyDoD1zEDacT1bg4ucrlra9dLT-DDs2pRJ4",
+  authDomain:        "milansetu.firebaseapp.com",
+  projectId:         "milansetu",
+  storageBucket:     "milansetu.firebasestorage.app",
+  messagingSenderId: "1020492452794",
+  appId:             "1:1020492452794:web:3c80f1d512af279cc8c383",
+  measurementId:     "G-XNNE7XBLZ6",
 };
 
 // ── VAPID Key for Web Push (FCM) ──────────────────────────────────────────────
-// Firebase Console → Project Settings → Cloud Messaging → Web Push certificates
+// Firebase Console → Project Settings → Cloud Messaging → Web Push certificates → Key pair
+// TODO: Replace with your actual VAPID key from Firebase Console
 export const VAPID_KEY = "REPLACE_WITH_YOUR_VAPID_KEY";
 
 // ── App Encryption Secret ─────────────────────────────────────────────────────
 // A strong passphrase used to derive per-conversation AES keys.
-// Keep this consistent across all clients (same secret = same derived keys).
-export const APP_ENCRYPTION_SECRET = "REPLACE_WITH_YOUR_40_CHAR_SECRET";
+export const APP_ENCRYPTION_SECRET = "milansetu-chat-secret-2024-secure";
 // ─────────────────────────────────────────────────────────────────────────────
 
 // Singleton init

@@ -77,7 +77,7 @@ const NotificationsPage = () => {
   const [activeFilter, setActiveFilter] = useState('All');
   const [receivedInterests, setReceivedInterests] = useState([]);
 
-  // Load received interests from localStorage
+  // Load received interests from localStorage / backend events
   React.useEffect(() => {
     const load = () => {
       try {
@@ -87,7 +87,11 @@ const NotificationsPage = () => {
     };
     load();
     window.addEventListener('storage', load);
-    return () => window.removeEventListener('storage', load);
+    window.addEventListener('interest:sent', load);
+    return () => {
+      window.removeEventListener('storage', load);
+      window.removeEventListener('interest:sent', load);
+    };
   }, []);
 
   const showInterests = activeFilter === 'All' || activeFilter === 'Interests';
@@ -150,76 +154,12 @@ const NotificationsPage = () => {
               </div>
             ))}
 
-            {/* Card 1: Interest */}
-              <div className={styles.notifCard}>
-                <div className={`${styles.iconCircle} ${styles.bgPink}`}><Icons.HeartSolid /></div>
-                <div className={styles.notifContent}>
-                  <div className={styles.notifHeaderRow}>
-                    <div className={styles.notifTitle}>Ananya Gupta sent you an Interest Request</div>
-                    <div className={styles.timestamp}>10m ago</div>
-                  </div>
-                  <div className={styles.notifDesc}>
-                    Ananya (26 Yrs, Software Engineer) matches your preferences by 94%. She would like to connect.
-                  </div>
-                  <div className={styles.actionRow}>
-                    <button className={styles.btnPrimary}>Accept Request</button>
-                    <button className={styles.btnOutline}>View Profile</button>
-                  </div>
-                </div>
+            {/* Empty state when no dynamic notifications */}
+            {receivedInterests.length === 0 && showInterests && (
+              <div style={{ padding: '40px 20px', textAlign: 'center', color: '#999' }}>
+                No interest notifications yet.
               </div>
-
-              {/* Card 2: Meeting */}
-              <div className={styles.notifCard}>
-                <div className={`${styles.iconCircle} ${styles.bgBlue}`}><Icons.Calendar /></div>
-                <div className={styles.notifContent}>
-                  <div className={styles.notifHeaderRow}>
-                    <div className={styles.notifTitle}>Upcoming Virtual Introduction</div>
-                    <div className={styles.timestamp}>2h ago</div>
-                  </div>
-                  <div className={styles.notifDesc}>
-                    Your video call with Priya Sharma is scheduled to begin in 30 minutes. Please ensure you have a stable connection.
-                  </div>
-                  <div className={styles.actionRow}>
-                    <button className={styles.btnGoldFilled}><Icons.Video /> Join Call</button>
-                    <button className={styles.btnOutline}>Reschedule</button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Card 3: Premium Match (Highlighted) */}
-              <div className={`${styles.notifCard} ${styles.premiumHighlight}`}>
-                <div className={`${styles.iconCircle} ${styles.bgCream}`}><Icons.Sparkle /></div>
-                <div className={styles.notifContent}>
-                  <div className={styles.notifHeaderRow}>
-                    <div className={styles.notifTitle}>New Premium Match Discovered</div>
-                    <div className={styles.timestamp}>5h ago</div>
-                  </div>
-                  <div className={styles.notifDesc}>
-                    We found a highly compatible profile for you. Ishita Verma shares your core values and professional background.
-                  </div>
-                  <div className={styles.actionRow}>
-                    <button className={styles.btnPrimary}>Show Interest</button>
-                    <button className={styles.btnOutline}>Compare Profiles</button>
-                  </div>
-                </div>
-              </div>
-
-              {/* Card 4: System / Profile */}
-              <div className={styles.notifCard}>
-                <div className={`${styles.iconCircle} ${styles.bgGreen}`}><Icons.ShieldCheck /></div>
-                <div className={styles.notifContent}>
-                  <div className={styles.notifHeaderRow}>
-                    <div className={styles.notifTitle}>Profile Verification Successful</div>
-                    <div className={styles.timestamp}>Yesterday</div>
-                  </div>
-                  <div className={styles.notifDesc}>
-                    Your educational and professional documents have been verified by our team. Your profile now features the Verified Badge.
-                  </div>
-                  <div className={styles.actionRow}>
-                    <button className={styles.btnFlatGray}>View Badge</button>
-                  </div>
-                </div>
-              </div>
+            )}
 
             </div>
           </div>
@@ -233,7 +173,7 @@ const NotificationsPage = () => {
                 <Icons.ShieldCheck />
                 <span className={styles.secLabel}>SECURITY STATUS</span>
               </div>
-              <h2 className={styles.secScoreHeading}>92% Profile Trust Score</h2>
+              <h2 className={styles.secScoreHeading}>Profile Trust Score</h2>
               
               <div className={styles.progressBarTrack}>
                 <div className={styles.progressBarFill}></div>
@@ -244,53 +184,6 @@ const NotificationsPage = () => {
               </p>
               
               <button className={styles.secBtn}>Complete Verification</button>
-            </div>
-
-            {/* Recent Activity Card */}
-            <div className={styles.activityCard}>
-              <h3 className={styles.activityHeading}>Recent Activity</h3>
-              
-              <div className={styles.activityList}>
-                <div className={styles.activityItem}>
-                  <div className={styles.bulletDot}></div>
-                  <div>
-                    <div className={styles.actTitle}>Profile Viewed</div>
-                    <div className={styles.actSub}>Kavita and 4 others viewed you</div>
-                  </div>
-                </div>
-                
-                <div className={styles.activityItem}>
-                  <div className={styles.bulletDot}></div>
-                  <div>
-                    <div className={styles.actTitle}>Preference Updated</div>
-                    <div className={styles.actSub}>Changed location criteria</div>
-                  </div>
-                </div>
-                
-                <div className={styles.activityItem}>
-                  <div className={styles.bulletDot}></div>
-                  <div>
-                    <div className={styles.actTitle}>Photo Gallery</div>
-                    <div className={styles.actSub}>Added 2 new recent photos</div>
-                  </div>
-                </div>
-              </div>
-              
-              <a href="#notifications" className={styles.viewAllLink}>View Full History</a>
-            </div>
-
-            {/* Spotlight Match Card */}
-            <div className={styles.spotlightCard}>
-              <AuthenticatedImage alt="Sneha Kapoor" className={styles.spotlightImg} />
-              <div className={styles.spotlightOverlay}>
-                <span className={styles.spotLabel}>SPOTLIGHT MATCH</span>
-                <h3 className={styles.spotName}>Sneha Kapoor</h3>
-                <span className={styles.spotSub}>Architect • New Delhi</span>
-                <span className={styles.spotScore}>96% COMPATIBLE</span>
-              </div>
-              <button className={styles.spotlightBtn}>
-                <Icons.ArrowRight />
-              </button>
             </div>
 
           </div>
