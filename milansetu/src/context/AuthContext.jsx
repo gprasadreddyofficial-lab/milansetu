@@ -1,15 +1,5 @@
 /**
  * AuthContext — global auth state for the app.
- *
- * Provides:
- *   user        — { id, email } or null
- *   profile     — profile_details object or null
- *   loading     — true while we're restoring session from localStorage
- *   login(email, password) → { error } | { error: null }
- *   register(payload)      → { error } | { error: null }
- *   logout()
- *   refreshProfile()       — re-fetches /profile/fetch_detail/ and updates state
- *   updateProfile(fields)  — PATCHes profile and updates state
  */
 
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
@@ -18,6 +8,7 @@ import {
   signUp,
   fetchMyProfile,
   updateMyProfile,
+  updateIdealPartner,
   saveTokens,
   saveUser,
   clearTokens,
@@ -28,35 +19,67 @@ import {
 
 const AuthContext = createContext(null);
 
+function parseAccountPayload(data) {
+  if (!data) return { profile: null, idealPartner: null, account: null };
+  // New shape: { profile, ideal_partner, account }
+  if (data.profile !== undefined) {
+    return {
+      profile: data.profile,
+      idealPartner: data.ideal_partner ?? null,
+      account: data.account ?? null,
+    };
+  }
+  // Legacy flat profile object
+  return { profile: data, idealPartner: null, account: null };
+}
+
+function buildUserFromAuth(data) {
+  return {
+    id: data.id,
+    email: data.email,
+    user_type: data.user_type ?? 'basic',
+    is_premium: data.is_premium ?? false,
+    is_staff: data.is_staff ?? false,
+  };
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
-  const [loading, setLoading] = useState(true); // restoring session
+  const [idealPartner, setIdealPartner] = useState(null);
+  const [account, setAccount] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // ── Restore session on mount ──────────────────────────────────────────────
+  const applyAccountPayload = useCallback((data) => {
+    const parsed = parseAccountPayload(data);
+    if (parsed.profile) setProfile(parsed.profile);
+    setIdealPartner(parsed.idealPartner);
+    setAccount(parsed.account);
+    return parsed;
+  }, []);
+
   useEffect(() => {
     const savedUser = getSavedUser();
-    const token     = getAccessToken();
+    const token = getAccessToken();
 
-    // If there's no saved user or the token is missing/malformed, bail immediately
     if (!savedUser || !token || !isValidJwtFormat(token)) {
-      clearTokens(); // wipe any partial garbage
+      clearTokens();
       setLoading(false);
       return;
     }
 
-    // Token looks valid locally — restore user and fetch fresh profile
     setUser(savedUser);
     fetchMyProfile()
-      .then(({ data }) => { if (data) setProfile(data); })
+      .then(({ data }) => { if (data) applyAccountPayload(data); })
       .finally(() => setLoading(false));
-  }, []);
+  }, [applyAccountPayload]);
 
-  // ── Listen for session-expired event fired by the request layer ───────────
   useEffect(() => {
     const handleExpired = () => {
       setUser(null);
       setProfile(null);
+      setIdealPartner(null);
+      setAccount(null);
       setLoading(false);
       window.location.hash = '#login';
     };
@@ -64,77 +87,90 @@ export function AuthProvider({ children }) {
     return () => window.removeEventListener('auth:session-expired', handleExpired);
   }, []);
 
-  // ── Login ─────────────────────────────────────────────────────────────────
   const login = useCallback(async (email, password) => {
     const { data, error } = await signIn(email, password);
     if (error) return { error };
 
     saveTokens({ access: data.access, refresh: data.refresh });
-    const userData = { id: data.id, email: data.email };
+    const userData = buildUserFromAuth(data);
     saveUser(userData);
     setUser(userData);
 
-    // Load profile after login — token was just saved so this must succeed
     const { data: profileData, error: profileError } = await fetchMyProfile();
     if (profileError) {
-      // Token we just received is already invalid — backend issue, force clean state
       clearTokens();
       setUser(null);
       return { error: `Login succeeded but profile fetch failed: ${profileError}` };
     }
-    if (profileData) setProfile(profileData);
+    if (profileData) applyAccountPayload(profileData);
 
     return { error: null };
-  }, []);
+  }, [applyAccountPayload]);
 
-  // ── Register ──────────────────────────────────────────────────────────────
-  const register = useCallback(async (payload) => {
-    const { data, error } = await signUp(payload);
+  const register = useCallback(async (payload, profilePhoto = null) => {
+    const { data, error } = await signUp(payload, profilePhoto);
     if (error) return { error };
 
     saveTokens({ access: data.access, refresh: data.refresh });
-    const userData = { id: data.id, email: data.email };
+    const userData = buildUserFromAuth(data);
     saveUser(userData);
     setUser(userData);
 
-    // Load profile after register
     const { data: profileData } = await fetchMyProfile();
-    if (profileData) setProfile(profileData);
+    if (profileData) applyAccountPayload(profileData);
 
     return { error: null };
-  }, []);
+  }, [applyAccountPayload]);
 
-  // ── Logout ────────────────────────────────────────────────────────────────
   const logout = useCallback(() => {
     clearTokens();
     setUser(null);
     setProfile(null);
+    setIdealPartner(null);
+    setAccount(null);
   }, []);
 
-  // ── Refresh profile ───────────────────────────────────────────────────────
   const refreshProfile = useCallback(async () => {
     const { data } = await fetchMyProfile();
-    if (data) setProfile(data);
-  }, []);
+    if (data) applyAccountPayload(data);
+  }, [applyAccountPayload]);
 
-  // ── Update profile ────────────────────────────────────────────────────────
   const updateProfile = useCallback(async (fields) => {
     const { data, error } = await updateMyProfile(fields);
     if (error) return { error };
-    setProfile(data);
+    applyAccountPayload(data);
+    return { error: null };
+  }, [applyAccountPayload]);
+
+  const saveIdealPartner = useCallback(async (fields) => {
+    const { data, error } = await updateIdealPartner(fields);
+    if (error) return { error };
+    if (data?.ideal_partner) setIdealPartner(data.ideal_partner);
+    if (data?.account) setAccount(data.account);
     return { error: null };
   }, []);
 
   return (
     <AuthContext.Provider
-      value={{ user, profile, loading, login, register, logout, refreshProfile, updateProfile }}
+      value={{
+        user,
+        profile,
+        idealPartner,
+        account,
+        loading,
+        login,
+        register,
+        logout,
+        refreshProfile,
+        updateProfile,
+        saveIdealPartner,
+      }}
     >
       {children}
     </AuthContext.Provider>
   );
 }
 
-// Convenience hook
 export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error('useAuth must be used inside <AuthProvider>');

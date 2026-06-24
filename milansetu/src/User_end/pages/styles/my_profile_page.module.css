@@ -352,6 +352,14 @@
   cursor: pointer;
   position: relative;
   font-weight: 500;
+  background: none;
+  border: none;
+  font-family: inherit;
+}
+
+.tab:focus-visible {
+  outline: 2px solid #800000;
+  outline-offset: -2px;
 }
 
 .activeTab {
@@ -778,4 +786,136 @@
 .saveProfileBtn:disabled {
   opacity: 0.6;
   cursor: not-allowed;
+}
+
+/* Photo Gallery */
+.photoGalleryGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 16px;
+  margin-top: 8px;
+}
+
+.photoGalleryItem {
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid #eee;
+  background: #fafafa;
+}
+
+.photoGalleryImg {
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  object-fit: cover;
+  display: block;
+}
+
+.photoGalleryLabel {
+  display: block;
+  padding: 8px 10px;
+  font-size: 12px;
+  color: #666;
+  text-align: center;
+}
+
+.photoGalleryHint {
+  margin-top: 16px;
+  font-size: 13px;
+  color: #888;
+}
+
+.photoGalleryToolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.photoGalleryCount {
+  font-size: 13px;
+  color: #555;
+}
+
+.photoGalleryPremiumNote {
+  color: #888;
+}
+
+.photoGalleryFileInput {
+  display: none;
+}
+
+.photoGalleryUploadBtn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: none;
+  background: #8b1538;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.photoGalleryUploadBtn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.photoGalleryError {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: #fff0f0;
+  color: #b00020;
+  font-size: 13px;
+}
+
+.photoGalleryItemFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 8px 10px;
+}
+
+.photoGallerySetBtn {
+  flex: 1;
+  padding: 4px 8px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 11px;
+  color: #8b1538;
+  cursor: pointer;
+}
+
+.photoGallerySetBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.photoGalleryDeleteBtn {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 6px;
+  background: #f5f5f5;
+  color: #666;
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.photoGalleryDeleteBtn:hover {
+  background: #fee;
+  color: #c00;
+}
+
+.photoGalleryStatus {
+  display: block;
+  padding: 0 10px 8px;
+  font-size: 11px;
+  color: #b8860b;
+  text-align: center;
 }

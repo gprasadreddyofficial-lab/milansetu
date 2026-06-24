@@ -11,6 +11,7 @@ import LoginPage from './User_end/pages/screens/LoginPage';
 import RegisterPage from './User_end/pages/screens/RegisterPage';
 import DashboardPage from './User_end/pages/screens/DashboardPage';
 import MyProfilePage from './User_end/pages/screens/MyProfilePage';
+import ViewProfilePage from './User_end/pages/screens/ViewProfilePage';
 import MyMatchesPage from './User_end/pages/screens/MyMatchesPage';
 import MessagesPage from './User_end/pages/screens/MessagesPage';
 import SentInterestsPage from './User_end/pages/screens/SentInterestsPage';
@@ -33,6 +34,15 @@ function getPageForRoute(route, isLoggedIn) {
   if (PROTECTED_ROUTES.has(route) && !isLoggedIn) {
     window.location.hash = '#login';
     return <LoginPage />;
+  }
+
+  if (route.startsWith('#profile/')) {
+    if (!isLoggedIn) {
+      window.location.hash = '#login';
+      return <LoginPage />;
+    }
+    const profileId = route.replace('#profile/', '').split('?')[0];
+    return <ViewProfilePage profileId={profileId} />;
   }
 
   switch (route) {

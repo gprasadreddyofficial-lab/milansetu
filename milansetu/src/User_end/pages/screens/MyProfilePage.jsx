@@ -1,9 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import styles from '../styles/my_profile_page.module.css';
 import Sidebar from '../../components/Sidebar';
 import TopBar from '../../components/TopBar';
-import ananyaImg from '../../../assets/User_end_assets/pro2.png';
+import AuthenticatedImage from '../../../components/AuthenticatedImage';
 import { useAuth } from '../../../context/AuthContext';
+import {
+  fetchGallery,
+  uploadGalleryImage,
+  deleteGalleryImage,
+  setGalleryProfilePhoto,
+} from '../../../api/auth';
+import { getIdealPartnerPreferences, getProfileAvatar, getProfilePhotoUrl, BASIC_IDEAL_PARTNER_KEYS, PREMIUM_IDEAL_PARTNER_KEYS } from '../../../utils/profileHelpers';
 
 // ── Inline SVG icons (unchanged) ─────────────────────────────────────────────
 const Icons = {
@@ -77,7 +84,182 @@ const Icons = {
       <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
     </svg>
   ),
+  Camera: () => (
+    <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z" />
+      <circle cx="12" cy="13" r="4" />
+    </svg>
+  ),
 };
+
+const PROFILE_TABS = [
+  { id: 'overview', label: 'Overview' },
+  { id: 'personal', label: 'Personal Details' },
+  { id: 'family', label: 'Family' },
+  { id: 'career', label: 'Education & Career' },
+  { id: 'horoscope', label: 'Horoscope' },
+  { id: 'partner', label: 'Partner Preferences' },
+  { id: 'photos', label: 'Photo Gallery' },
+];
+
+const MEMBERSHIP_LABELS = {
+  basic: 'Basic Member',
+  silver: 'Silver Member',
+  gold: 'Gold Member',
+  platinum: 'Platinum Member',
+};
+
+// ── Edit Partner Preferences Modal ────────────────────────────────────────────
+function EditPartnerModal({ idealPartner, account, onClose, onSave }) {
+  const isPremium = account?.is_premium ?? false;
+
+  const buildInitialFields = () => {
+    const base = {
+      age_min: idealPartner?.age_min ?? '',
+      age_max: idealPartner?.age_max ?? '',
+      height_min_cm: idealPartner?.height_min_cm ?? '',
+      height_max_cm: idealPartner?.height_max_cm ?? '',
+      religion: idealPartner?.religion || '',
+      location: idealPartner?.location || '',
+    };
+    if (!isPremium) return base;
+    return {
+      ...base,
+      mother_tongue: idealPartner?.mother_tongue || '',
+      marital_status: idealPartner?.marital_status || '',
+      education: idealPartner?.education || '',
+      industry: idealPartner?.industry || '',
+      min_income: idealPartner?.min_income ?? '',
+      max_income: idealPartner?.max_income ?? '',
+      income_unit: idealPartner?.income_unit || '',
+      manglik_status: idealPartner?.manglik_status || '',
+      family_values: idealPartner?.family_values || '',
+    };
+  };
+
+  const [fields, setFields] = useState(buildInitialFields);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  const set = (k, v) => setFields((f) => ({ ...f, [k]: v }));
+
+  const basicFields = [
+    { label: 'Min Age', key: 'age_min', type: 'number' },
+    { label: 'Max Age', key: 'age_max', type: 'number' },
+    { label: 'Min Height (cm)', key: 'height_min_cm', type: 'number' },
+    { label: 'Max Height (cm)', key: 'height_max_cm', type: 'number' },
+    { label: 'Religion', key: 'religion', type: 'text' },
+    { label: 'Location', key: 'location', type: 'text' },
+  ];
+
+  const premiumFields = [
+    { label: 'Mother Tongue', key: 'mother_tongue', type: 'text' },
+    { label: 'Marital Status', key: 'marital_status', type: 'text' },
+    { label: 'Education', key: 'education', type: 'text' },
+    { label: 'Industry', key: 'industry', type: 'text' },
+    { label: 'Min Income', key: 'min_income', type: 'number' },
+    { label: 'Max Income', key: 'max_income', type: 'number' },
+    { label: 'Income Unit', key: 'income_unit', type: 'text' },
+    { label: 'Manglik Status', key: 'manglik_status', type: 'text' },
+    { label: 'Family Values', key: 'family_values', type: 'text' },
+  ];
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError('');
+    setSaving(true);
+
+    const allowedKeys = isPremium
+      ? [...BASIC_IDEAL_PARTNER_KEYS, ...PREMIUM_IDEAL_PARTNER_KEYS]
+      : BASIC_IDEAL_PARTNER_KEYS;
+
+    const payload = Object.fromEntries(
+      Object.entries(fields).filter(
+        ([key, v]) => allowedKeys.includes(key) && v !== ''
+      )
+    );
+
+    ['age_min', 'age_max', 'height_min_cm', 'height_max_cm', 'min_income', 'max_income'].forEach((key) => {
+      if (payload[key] !== undefined) payload[key] = Number(payload[key]);
+    });
+
+    const { error: err } = await onSave(payload);
+    setSaving(false);
+    if (err) { setError(err); return; }
+    onClose();
+  };
+
+  return (
+    <div className={styles.modalOverlay} onClick={onClose}>
+      <div className={styles.modalCard} onClick={(e) => e.stopPropagation()}>
+        <div className={styles.modalHeader}>
+          <h2 className={styles.modalTitle}>Partner Preferences</h2>
+          <button className={styles.modalClose} onClick={onClose}><Icons.Close /></button>
+        </div>
+
+        {error && <div className={styles.apiError}>{error}</div>}
+        {!isPremium && (
+          <div className={styles.apiError} style={{ background: '#fff8e6', color: '#8a6d00' }}>
+            Age, height, religion, and location are free for everyone.
+            Upgrade to Premium to filter by income, education, manglik, and more.
+          </div>
+        )}
+
+        <form onSubmit={handleSubmit} className={styles.modalForm}>
+          {basicFields.map(({ label, key, type }) => (
+            <div className={styles.modalField} key={key}>
+              <label className={styles.modalLabel}>{label}</label>
+              <input
+                className={styles.modalInput}
+                type={type}
+                value={fields[key]}
+                onChange={(e) => set(key, e.target.value)}
+              />
+            </div>
+          ))}
+
+          {!isPremium && (
+            <div
+              style={{
+                gridColumn: '1 / -1',
+                padding: '12px 16px',
+                background: '#faf6ee',
+                borderRadius: '8px',
+                border: '1px dashed #c9a227',
+                cursor: 'pointer',
+              }}
+              onClick={() => { window.location.hash = '#subscription'; }}
+            >
+              <strong>Premium filters</strong> — income, education, manglik, mother tongue, and more.
+              <span style={{ display: 'block', marginTop: '4px', color: '#8a6d00' }}>
+                Tap to upgrade →
+              </span>
+            </div>
+          )}
+
+          {isPremium && premiumFields.map(({ label, key, type }) => (
+            <div className={styles.modalField} key={key}>
+              <label className={styles.modalLabel}>{label} (Premium)</label>
+              <input
+                className={styles.modalInput}
+                type={type}
+                value={fields[key]}
+                onChange={(e) => set(key, e.target.value)}
+              />
+            </div>
+          ))}
+
+          <div className={styles.modalActions}>
+            <button type="button" className={styles.cancelBtn} onClick={onClose}>Cancel</button>
+            <button type="submit" className={styles.saveProfileBtn} disabled={saving}>
+              <Icons.Save /> {saving ? 'Saving…' : 'Save Preferences'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+}
 
 // ── Edit Modal ────────────────────────────────────────────────────────────────
 function EditProfileModal({ profile, onClose, onSave }) {
@@ -180,16 +362,189 @@ function EditProfileModal({ profile, onClose, onSave }) {
   );
 }
 
+// ── Photo Gallery Section ─────────────────────────────────────────────────────
+function PhotoGallerySection({ account, profile, refreshProfile }) {
+  const [items, setItems] = useState([]);
+  const [galleryMeta, setGalleryMeta] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [uploading, setUploading] = useState(false);
+  const [actionId, setActionId] = useState(null);
+  const [error, setError] = useState('');
+  const fileInputRef = useRef(null);
+
+  const loadGallery = async () => {
+    const { data, error: err } = await fetchGallery();
+    if (err) {
+      setError(err);
+    } else if (data) {
+      setItems(data.items || []);
+      setGalleryMeta(data);
+      setError('');
+    }
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    loadGallery();
+  }, []);
+
+  const limit = galleryMeta?.limit ?? account?.gallery_limit ?? 5;
+  const count = galleryMeta?.count ?? account?.gallery_count ?? items.length;
+  const canUpload = count < limit;
+
+  const handleUpload = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    setUploading(true);
+    setError('');
+    const { data, error: err, upgradeRequired } = await uploadGalleryImage(file);
+    setUploading(false);
+
+    if (err) {
+      setError(upgradeRequired
+        ? `${err} Upgrade to Silver, Gold, or Platinum for up to ${galleryMeta?.premium_limit ?? 30} photos.`
+        : err);
+      return;
+    }
+
+    await loadGallery();
+    if (refreshProfile) await refreshProfile();
+  };
+
+  const handleSetProfile = async (id) => {
+    setActionId(id);
+    setError('');
+    const { error: err } = await setGalleryProfilePhoto(id);
+    setActionId(null);
+    if (err) {
+      setError(err);
+      return;
+    }
+    await loadGallery();
+    if (refreshProfile) await refreshProfile();
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Remove this photo from your gallery?')) return;
+    setActionId(id);
+    setError('');
+    const { error: err } = await deleteGalleryImage(id);
+    setActionId(null);
+    if (err) {
+      setError(err);
+      return;
+    }
+    await loadGallery();
+    if (refreshProfile) await refreshProfile();
+  };
+
+  return (
+    <>
+      <div className={styles.photoGalleryToolbar}>
+        <span className={styles.photoGalleryCount}>
+          {count} / {limit} photos
+          {!account?.is_premium && (
+            <span className={styles.photoGalleryPremiumNote}>
+              {' '}· Basic limit {galleryMeta?.basic_limit ?? 5}. Premium unlocks more.
+            </span>
+          )}
+        </span>
+        {canUpload && (
+          <>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className={styles.photoGalleryFileInput}
+              onChange={handleUpload}
+            />
+            <button
+              type="button"
+              className={styles.photoGalleryUploadBtn}
+              disabled={uploading}
+              onClick={() => fileInputRef.current?.click()}
+            >
+              {uploading ? 'Uploading…' : '+ Add Photo'}
+            </button>
+          </>
+        )}
+      </div>
+
+      {error && <p className={styles.photoGalleryError} role="alert">{error}</p>}
+
+      {loading ? (
+        <p className={styles.photoGalleryHint}>Loading gallery…</p>
+      ) : items.length === 0 ? (
+        <p className={styles.photoGalleryHint}>
+          No photos yet. Add your first profile photo — images are checked for appropriateness before approval.
+        </p>
+      ) : (
+        <div className={styles.photoGalleryGrid}>
+          {items.map((item) => (
+            <div key={item.id} className={styles.photoGalleryItem}>
+              <AuthenticatedImage
+                src={item.image_url}
+                profile={profile}
+                alt={item.original_filename || 'Gallery photo'}
+                className={styles.photoGalleryImg}
+              />
+              <div className={styles.photoGalleryItemFooter}>
+                {item.is_profile_photo ? (
+                  <span className={styles.photoGalleryLabel}>Profile Photo</span>
+                ) : (
+                  <button
+                    type="button"
+                    className={styles.photoGallerySetBtn}
+                    disabled={actionId === item.id || item.sensitivity_status === 'rejected'}
+                    onClick={() => handleSetProfile(item.id)}
+                  >
+                    {actionId === item.id ? '…' : 'Set as Profile'}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  className={styles.photoGalleryDeleteBtn}
+                  disabled={actionId === item.id}
+                  onClick={() => handleDelete(item.id)}
+                  aria-label="Delete photo"
+                >
+                  ×
+                </button>
+              </div>
+              {item.sensitivity_status === 'pending' && (
+                <span className={styles.photoGalleryStatus}>Review pending</span>
+              )}
+            </div>
+          ))}
+        </div>
+      )}
+
+      <p className={styles.photoGalleryHint}>
+        JPEG, PNG, or WebP up to 5 MB. Each upload passes a sensitivity check. Choose any approved photo as your profile picture.
+      </p>
+    </>
+  );
+}
+
 // ── Main MyProfilePage ────────────────────────────────────────────────────────
 const MyProfilePage = () => {
-  const { user, profile, updateProfile } = useAuth();
+  const { user, profile, idealPartner, account, updateProfile, saveIdealPartner, refreshProfile } = useAuth();
   const [editOpen, setEditOpen] = useState(false);
+  const [partnerOpen, setPartnerOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('overview');
 
   const displayName = profile?.full_name || user?.email || 'Your Profile';
   const designation = profile?.current_designation || '';
+  const photoUrl = getProfilePhotoUrl(profile, account);
+  const avatarFallback = getProfileAvatar(profile, account);
+  const membershipLabel = MEMBERSHIP_LABELS[user?.user_type || account?.user_type || 'basic'] || 'Member';
   const birthDate   = profile?.date_of_birth
     ? new Date(profile.date_of_birth).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })
     : '—';
+
+  const showSection = (sectionId) => activeTab === 'overview' || activeTab === sectionId;
 
   return (
     <div className={styles.dashboardContainer}>
@@ -199,7 +554,7 @@ const MyProfilePage = () => {
         <TopBar
           searchPlaceholder="Search connections..."
           userName={displayName}
-          avatarSrc={ananyaImg}
+          avatarSrc={photoUrl || avatarFallback}
         />
 
         <div className={styles.profileBody}>
@@ -209,13 +564,19 @@ const MyProfilePage = () => {
             <div className={styles.headerContent}>
               <div className={styles.profileInfoWrapper}>
                 <div className={styles.photoContainer}>
-                  <img src={ananyaImg} alt={displayName} className={styles.profilePhoto} />
+                  <AuthenticatedImage
+                    src={photoUrl}
+                    profile={profile}
+                    fallbackSrc={avatarFallback}
+                    alt={displayName}
+                    className={styles.profilePhoto}
+                  />
                   <div className={styles.verifiedBadge}>✓</div>
                 </div>
                 <div>
                   <div className={styles.nameBadgeRow}>
                     <h1 className={styles.profileName}>{displayName}</h1>
-                    <span className={styles.memberBadge}>Premium Member</span>
+                    <span className={styles.memberBadge}>{membershipLabel}</span>
                   </div>
                   <div className={styles.metaLine}>
                     <Icons.Pin />
@@ -234,19 +595,24 @@ const MyProfilePage = () => {
           </section>
 
           {/* Tab Navigation */}
-          <nav className={styles.tabBar}>
-            <div className={`${styles.tab} ${styles.activeTab}`}>Overview</div>
-            <div className={styles.tab}>Personal Details</div>
-            <div className={styles.tab}>Family</div>
-            <div className={styles.tab}>Education & Career</div>
-            <div className={styles.tab}>Horoscope</div>
-            <div className={styles.tab}>Partner Preferences</div>
-            <div className={styles.tab}>Photo Gallery</div>
+          <nav className={styles.tabBar} role="tablist" aria-label="Profile sections">
+            {PROFILE_TABS.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={activeTab === tab.id}
+                className={`${styles.tab} ${activeTab === tab.id ? styles.activeTab : ''}`}
+                onClick={() => setActiveTab(tab.id)}
+              >
+                {tab.label}
+              </button>
+            ))}
           </nav>
 
           {/* Info Grid */}
           <div className={styles.infoGrid}>
-            {/* Personal Details Card */}
+            {showSection('personal') && (
             <div className={styles.infoCard}>
               <div className={styles.cardHeader}>
                 <div className={styles.iconCircle}><Icons.SearchSmall /></div>
@@ -268,8 +634,9 @@ const MyProfilePage = () => {
                 ))}
               </div>
             </div>
+            )}
 
-            {/* Ideal Partner Card */}
+            {showSection('partner') && (
             <div className={`${styles.infoCard} ${styles.darkCard}`}>
               <div className={styles.cardHeader}>
                 <div className={styles.iconCircle} style={{ backgroundColor: 'rgba(255,255,255,0.1)', color: 'white' }}>
@@ -278,22 +645,20 @@ const MyProfilePage = () => {
                 <h2 className={styles.cardTitle}>Ideal Partner</h2>
               </div>
               <div>
-                {[
-                  { label: 'Age Range',  value: '24 - 27 Years' },
-                  { label: 'Height',     value: "5'4'' - 5'8''" },
-                  { label: 'Religion',   value: profile?.religion ? `${profile.religion} (Any)` : 'Any' },
-                  { label: 'Location',   value: 'India / Overseas' },
-                ].map((p, i) => (
-                  <div key={i} className={styles.prefRow}>
+                {getIdealPartnerPreferences(idealPartner, account).map((p) => (
+                  <div key={p.label} className={styles.prefRow}>
                     <span className={styles.prefLabel}>{p.label}</span>
                     <span className={styles.prefValue}>{p.value}</span>
                   </div>
                 ))}
-                <button className={styles.updatePrefBtn}>Update Preferences</button>
+                <button className={styles.updatePrefBtn} onClick={() => setPartnerOpen(true)}>
+                  Update Preferences
+                </button>
               </div>
             </div>
+            )}
 
-            {/* Family Information Card */}
+            {showSection('family') && (
             <div className={styles.infoCard}>
               <div className={styles.cardHeader}>
                 <div className={styles.iconCircle}><Icons.Users /></div>
@@ -340,8 +705,9 @@ const MyProfilePage = () => {
                 </div>
               </div>
             </div>
+            )}
 
-            {/* Career Card */}
+            {showSection('career') && (
             <div className={`${styles.infoCard} ${styles.careerCard}`}>
               <div className={styles.cardHeader}>
                 <div className={`${styles.iconCircle} ${styles.goldCircle}`}><Icons.Graduation /></div>
@@ -365,8 +731,9 @@ const MyProfilePage = () => {
                 </span>
               </div>
             </div>
+            )}
 
-            {/* Horoscope Card */}
+            {showSection('horoscope') && (
             <div className={`${styles.infoCard} ${styles.fullWidth}`}>
               <div className={styles.cardHeaderFull}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -398,6 +765,21 @@ const MyProfilePage = () => {
                 ))}
               </div>
             </div>
+            )}
+
+            {showSection('photos') && (
+            <div className={`${styles.infoCard} ${styles.fullWidth}`}>
+              <div className={styles.cardHeader}>
+                <div className={styles.iconCircle}><Icons.Camera /></div>
+                <h2 className={styles.cardTitle}>Photo Gallery</h2>
+              </div>
+              <PhotoGallerySection
+                account={account}
+                profile={profile}
+                refreshProfile={refreshProfile}
+              />
+            </div>
+            )}
           </div>
         </div>
 
@@ -423,6 +805,15 @@ const MyProfilePage = () => {
           profile={profile}
           onClose={() => setEditOpen(false)}
           onSave={updateProfile}
+        />
+      )}
+
+      {partnerOpen && (
+        <EditPartnerModal
+          idealPartner={idealPartner}
+          account={account}
+          onClose={() => setPartnerOpen(false)}
+          onSave={saveIdealPartner}
         />
       )}
     </div>
