@@ -701,10 +701,4 @@ const MyMatchesPage = () => {
     </div>
   );
 };
-
-export default MyMatchesPage;
-    </div>
-  );
-};
-
 export default MyMatchesPage;
