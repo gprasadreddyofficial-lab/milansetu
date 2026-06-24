@@ -178,12 +178,21 @@ const DashboardPage = () => {
     const match = confirmMatch;
     closeConfirm();
     setSendingId(match.id);
-    await sendInterest(match.id);
-    simulateReceivedInterest(match, profile || user);
-    const { data } = await fetchSentInterestStats();
-    if (data) setSentStats(data);
+    const { error } = await sendInterest(match.id);
+    if (!error) {
+      // Fire global event — App.jsx shows the success toast on every page
+      window.dispatchEvent(new CustomEvent('interest:sent', {
+        detail: {
+          matchId: match.id,
+          name: match.full_name || 'this member',
+          matchScore: match.matchScore || match.match_score || 0,
+        },
+      }));
+      const { data } = await fetchSentInterestStats();
+      if (data) setSentStats(data);
+      setInterestSent(prev => ({ ...prev, [match.id]: true }));
+    }
     setSendingId(null);
-    setInterestSent(prev => ({ ...prev, [match.id]: true }));
   };
 
   return (

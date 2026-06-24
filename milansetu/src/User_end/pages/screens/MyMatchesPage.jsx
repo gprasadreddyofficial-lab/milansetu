@@ -272,13 +272,21 @@ const MyMatchesPage = () => {
     const match = confirmMatch;
     setConfirmMatch(null);
     setSendingId(match.id);
-    await sendInterest(match.id);
-    // Notify ReceivedInterestsPage and NotificationsPage to reload
-    window.dispatchEvent(new CustomEvent('interest:sent', { detail: { matchId: match.id } }));
-    const { data } = await fetchSentInterestStats();
-    if (data) setSentStats(data);
+    const { error } = await sendInterest(match.id);
+    if (!error) {
+      // Fire global event — App.jsx shows the success toast on every page
+      window.dispatchEvent(new CustomEvent('interest:sent', {
+        detail: {
+          matchId: match.id,
+          name: match.full_name || 'this member',
+          matchScore: match.matchScore || 0,
+        },
+      }));
+      const { data } = await fetchSentInterestStats();
+      if (data) setSentStats(data);
+      setInterestSent(prev => ({ ...prev, [match.id]: true }));
+    }
     setSendingId(null);
-    setInterestSent(prev => ({ ...prev, [match.id]: true }));
   };
 
   // ── Swipe handlers ────────────────────────────────────────────────────────
@@ -690,6 +698,11 @@ const MyMatchesPage = () => {
           onCancel={() => setConfirmMatch(null)}
         />
       )}
+    </div>
+  );
+};
+
+export default MyMatchesPage;
     </div>
   );
 };
