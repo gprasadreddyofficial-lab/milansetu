@@ -23,7 +23,7 @@ const firebaseConfig = {
 // ── VAPID Key for Web Push (FCM) ──────────────────────────────────────────────
 // Firebase Console → Project Settings → Cloud Messaging → Web Push certificates → Key pair
 // TODO: Replace with your actual VAPID key from Firebase Console
-export const VAPID_KEY = "REPLACE_WITH_YOUR_VAPID_KEY";
+export const VAPID_KEY = "BMQvd5nstu5f2Xvarq9LvbuTkewfEGXxfw6pVI06pMxZC8yHKWDIS5Sk7viMQyOQlsDVXLFUjefAs-LDdr--jr8";
 
 // ── App Encryption Secret ─────────────────────────────────────────────────────
 // A strong passphrase used to derive per-conversation AES keys.

@@ -21,6 +21,9 @@ import SubscriptionPlansPage from './User_end/pages/screens/SubscriptionPlansPag
 import NotificationsPage from './User_end/pages/screens/NotificationsPage';
 import SettingsPage from './User_end/pages/screens/SettingsPage';
 import LogoutPage from './User_end/pages/screens/LogoutPage';
+import { initFCM, onForegroundMessage } from './firebase/firebaseNotifications';
+
+
 
 // ── Routes that require the user to be logged in ──────────────────────────────
 const PROTECTED_ROUTES = new Set([
@@ -139,11 +142,77 @@ function InterestSuccessToast({ toast, onDismiss }) {
   );
 }
 
+// ── Global FCM Notification Toast ──────────────────────────────────────────────
+function FCMNotificationToast({ toast, onDismiss }) {
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(onDismiss, 5000);
+    return () => clearTimeout(t);
+  }, [toast, onDismiss]);
+
+  if (!toast) return null;
+
+  return (
+    <>
+      <style>{`
+        @keyframes fcmSlideIn {
+          from { opacity: 0; transform: translateY(-40px) scale(0.95); }
+          to   { opacity: 1; transform: translateY(0) scale(1); }
+        }
+      `}</style>
+      <div
+        onClick={() => {
+          if (toast.url) window.location.hash = toast.url;
+          onDismiss();
+        }}
+        style={{
+          position: 'fixed',
+          top: '24px',
+          right: '24px',
+          zIndex: 999999,
+          background: 'rgba(255, 255, 255, 0.95)',
+          backdropFilter: 'blur(10px)',
+          border: '1px solid rgba(123, 31, 46, 0.15)',
+          color: '#333',
+          borderRadius: '16px',
+          padding: '16px 20px',
+          boxShadow: '0 12px 32px rgba(123, 31, 46, 0.15)',
+          display: 'flex',
+          alignItems: 'start',
+          gap: '12px',
+          width: '320px',
+          animation: 'fcmSlideIn 0.3s cubic-bezier(0.34,1.56,0.64,1)',
+          cursor: 'pointer',
+        }}
+      >
+        <div style={{
+          width: '36px', height: '36px', borderRadius: '10px',
+          background: '#7B1F2E', color: '#fff',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: '18px', flexShrink: 0,
+        }}>
+          🔔
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontWeight: 700, fontSize: '13px', color: '#7B1F2E', marginBottom: '2px' }}>
+            {toast.title}
+          </div>
+          <div style={{ fontSize: '12px', color: '#666', lineHeight: '1.4' }}>
+            {toast.body}
+          </div>
+        </div>
+        <div style={{ fontSize: '16px', color: '#999', flexShrink: 0 }}>×</div>
+      </div>
+    </>
+  );
+}
+
 // ── App ───────────────────────────────────────────────────────────────────────
 export default function App() {
   const [route, setRoute] = useState(window.location.hash || '#home');
   const { user, loading } = useAuth();
   const [interestToast, setInterestToast] = useState(null);
+  const [fcmToast, setFcmToast] = useState(null);
 
   // Hash-based routing
   useEffect(() => {
@@ -166,6 +235,30 @@ export default function App() {
   }, []);
 
   const dismissToast = useCallback(() => setInterestToast(null), []);
+  const dismissFcmToast = useCallback(() => setFcmToast(null), []);
+
+  // Global FCM Token Registration on User Login
+  useEffect(() => {
+    if (user) {
+      initFCM().catch(err => console.warn('[FCM] Global init failed:', err));
+    }
+  }, [user]);
+
+  // Global FCM Foreground Notification Listener
+  useEffect(() => {
+    let unsubFCM = null;
+    if (user) {
+      onForegroundMessage(({ title, body, data }) => {
+        // Only show global toast if we are NOT on the messages page
+        // (the messages page has its own chat toast and chat thread handler)
+        if (window.location.hash !== '#messages') {
+          setFcmToast({ title, body, url: data?.url });
+        }
+      }).then(unsub => { unsubFCM = unsub; });
+    }
+    return () => { if (typeof unsubFCM === 'function') unsubFCM(); };
+  }, [user]);
+
 
   if (loading) return null;
 
@@ -173,6 +266,8 @@ export default function App() {
     <>
       {getPageForRoute(route, !!user)}
       <InterestSuccessToast toast={interestToast} onDismiss={dismissToast} />
+      <FCMNotificationToast toast={fcmToast} onDismiss={dismissFcmToast} />
     </>
   );
 }
+

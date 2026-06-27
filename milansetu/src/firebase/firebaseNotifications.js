@@ -28,10 +28,16 @@ export async function requestNotificationPermission() {
 export async function getFCMToken() {
   try {
     const messaging = await getMessagingInstance();
-    if (!messaging) return null;
+    if (!messaging) {
+      console.warn('[FCM] Messaging instance is null (not supported)');
+      return null;
+    }
 
-    // Register FCM service worker
-    const swReg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+    // Register FCM service worker (respecting Vite's base path)
+    const swPath = `${import.meta.env.BASE_URL || '/'}firebase-messaging-sw.js`;
+    console.log('[FCM] Registering Service Worker at:', swPath);
+    const swReg = await navigator.serviceWorker.register(swPath);
+    console.log('[FCM] Service Worker registered successfully');
 
     const token = await getToken(messaging, {
       vapidKey: VAPID_KEY,
@@ -39,7 +45,8 @@ export async function getFCMToken() {
     });
     return token || null;
   } catch (err) {
-    console.warn('[FCM] Could not get token:', err);
+    console.error('[FCM] Could not get token:', err);
+    alert('[FCM Error] Could not get token: ' + err.message);
     return null;
   }
 }
@@ -50,7 +57,7 @@ export async function getFCMToken() {
  */
 export async function saveFCMTokenToBackend(token) {
   try {
-    await apiClient.post('/api/milansetu/fcm/token/', { token });
+    await apiClient.post('/milansetu/fcm/token/', { token });
   } catch (err) {
     console.warn('[FCM] Could not save token to backend:', err);
   }
@@ -63,10 +70,16 @@ export async function saveFCMTokenToBackend(token) {
  */
 export async function initFCM() {
   const permission = await requestNotificationPermission();
-  if (permission !== 'granted') return null;
+  console.log('[FCM] Permission status:', permission);
+  if (permission !== 'granted') {
+    console.warn('[FCM] Notification permission not granted:', permission);
+    return null;
+  }
 
   const token = await getFCMToken();
-  if (token) await saveFCMTokenToBackend(token);
+  if (token) {
+    await saveFCMTokenToBackend(token);
+  }
   return token;
 }
 

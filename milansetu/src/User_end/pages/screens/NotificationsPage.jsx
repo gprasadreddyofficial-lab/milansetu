@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import styles from '../styles/notifications_page.module.css';
 import Sidebar from '../../components/Sidebar';
 import TopBar from '../../components/TopBar';
+import { fetchReceivedInterests } from '../../../api/auth';
+
 
 // dynamic avatars
 import AuthenticatedImage from '../../../components/AuthenticatedImage';
@@ -76,23 +78,43 @@ function getRelativeTime(iso) {
 const NotificationsPage = () => {
   const [activeFilter, setActiveFilter] = useState('All');
   const [receivedInterests, setReceivedInterests] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  // Load received interests from localStorage / backend events
+  // Load received interests from backend
   React.useEffect(() => {
-    const load = () => {
-      try {
-        const raw = localStorage.getItem(REC_INTERESTS_KEY);
-        setReceivedInterests(raw ? JSON.parse(raw) : []);
-      } catch { setReceivedInterests([]); }
+    const load = async () => {
+      setLoading(true);
+      const { data } = await fetchReceivedInterests();
+      if (Array.isArray(data)) {
+        // Map the backend data to match notification cards layout
+        const mapped = data.map(item => {
+          const sender = item.sender_profile || {};
+          return {
+            id: item.id,
+            senderId: item.sender_id,
+            name: item.sender_name || sender.full_name || 'Member',
+            age: sender.age || '',
+            role: sender.current_designation || sender.education || 'Professional',
+            match: item.match_score ? `${item.match_score}%` : '0%',
+            created_at: item.created_at,
+            message: item.message,
+            status: item.status,
+          };
+        });
+        setReceivedInterests(mapped);
+      } else {
+        setReceivedInterests([]);
+      }
+      setLoading(false);
     };
+
     load();
-    window.addEventListener('storage', load);
     window.addEventListener('interest:sent', load);
     return () => {
-      window.removeEventListener('storage', load);
       window.removeEventListener('interest:sent', load);
     };
   }, []);
+
 
   const showInterests = activeFilter === 'All' || activeFilter === 'Interests';
 
@@ -132,8 +154,13 @@ const NotificationsPage = () => {
             {/* Feed List */}
             <div className={styles.feedList}>
               
-            {/* Dynamic Interest Notifications from localStorage */}
-            {showInterests && receivedInterests.length > 0 && receivedInterests.map((interest) => (
+            {loading && (
+              <div style={{ padding: '40px 20px', textAlign: 'center', color: '#999' }}>
+                Loading notifications…
+              </div>
+            )}
+
+            {!loading && showInterests && receivedInterests.length > 0 && receivedInterests.map((interest) => (
               <div key={interest.id} className={styles.notifCard} style={{ borderLeft: '3px solid #c0392b' }}>
                 <div className={`${styles.iconCircle} ${styles.bgPink}`}><Icons.HeartSolid /></div>
                 <div className={styles.notifContent}>
@@ -141,7 +168,7 @@ const NotificationsPage = () => {
                     <div className={styles.notifTitle}>
                       {interest.name} sent you an Interest Request
                     </div>
-                    <div className={styles.timestamp}>{getRelativeTime(interest.timestamp)}</div>
+                    <div className={styles.timestamp}>{getRelativeTime(interest.created_at)}</div>
                   </div>
                   <div className={styles.notifDesc}>
                     {interest.name}{interest.age ? ` (${interest.age} Yrs` : ''}{interest.role ? `, ${interest.role})` : ')'}  matches your preferences by {interest.match}. They would like to connect.
@@ -154,12 +181,12 @@ const NotificationsPage = () => {
               </div>
             ))}
 
-            {/* Empty state when no dynamic notifications */}
-            {receivedInterests.length === 0 && showInterests && (
+            {!loading && receivedInterests.length === 0 && showInterests && (
               <div style={{ padding: '40px 20px', textAlign: 'center', color: '#999' }}>
                 No interest notifications yet.
               </div>
             )}
+
 
             </div>
           </div>
